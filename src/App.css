@@ -1,38 +1,201 @@
-.App {
-  text-align: center;
+* {
+    margin: 0;
+    box-sizing: border-box;
+    padding: 0;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+a {
+    text-decoration: none;
+    color: black;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+.type {
+    background-color: transparent;
+    color: white;
+    position: absolute;
+    bottom: 10px;
+    float: left;
+    font-family: Arial, sans-serif;
+    font-style: italic;
+    font-weight: 600;
+    font-family: 5rem;
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+.service {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 5px;
 }
 
-.App-link {
-  color: #61dafb;
+.title {
+    font-size: 24px;
+    font-weight: bold;
+    display: flex;
+    justify-content: start;
+    font-weight: 500;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.service-item {
+    display: flex;
+    justify-content: space-between;
+    width: 90%;
+    align-items: center;
+    cursor: pointer;
+    padding: 0.5rem;
+}
+
+.service-item:hover {
+    background-color: rgb(215, 213, 213);
+    border-radius: 1rem;
+    transform: scale(1.1);
+    transition: 0.5s ease-in-out;
+}
+
+.service-item div {
+    display: flex;
+    align-items: center;
+}
+
+.service-item svg {
+    width: 30px;
+    height: 30px;
+    color: rgb(47, 48, 48);
+    margin-right: 1rem;
+    flex-shrink: 0;
+    /* Added to prevent SVG from shrinking */
+}
+
+.service-item p {
+    margin: 0;
+    /* Added to remove default margin */
+}
+
+
+/*Object deduction */
+
+.object-container {
+    width: 100%;
+    height: 100vh;
+    overflow: auto;
+    margin: 0 auto;
+}
+
+.heading {
+    text-align: center;
+    padding: 10px;
+}
+
+h1 {
+    text-shadow: 2px 2px 4px white;
+    font-weight: bolder;
+    font-family: 'Times, serif';
+    font-size: 3rem;
+    letter-spacing: 10px;
+    text-transform: uppercase;
+}
+
+.webcam-stoped {
+    color: red;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 1rem;
+    margin-top: 60px;
+}
+
+span {
+    color: green;
+    margin-left: 5px;
+}
+
+.webcam-container {
+    width: 100%;
+    max-height: 90vh;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.webcam {
+    width: 100%;
+    height: 100%;
+    border-radius: 0.375rem;
+}
+
+@media (min-width: 1024px) {
+    .webcam {
+        height: 720px;
+    }
+}
+
+.stop {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.stop button {
+    padding: 10px 30px;
+    color: black;
+    font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+    font-size: large;
+    font-weight: bold;
+    border: none;
+    background-color: rgb(137, 142, 142);
+    border-radius: 20px;
+    cursor: pointer;
+}
+
+.canvas {
+    display: block;
+    position: absolute;
+    top: 15%;
+    left: 15%;
+}
+
+.loading-text {
+    margin-top: 100px;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 4rem;
+    text-align: center;
+    animation: fadeInOut 1.5s linear infinite;
+    font-weight: bold
+}
+
+@keyframes fadeInOut {
+    0% {
+        opacity: 0;
+    }
+    50% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+    }
+}
+
+.chat-box-container {
+    height: 100dvh;
+    width: 100%;
+}
+
+.messages {
+    height: 70dvh;
+    overflow-y: auto;
+}
+
+.chat-box {
+    overflow-y: auto;
+}
+
+.message {
+    margin-bottom: 10px;
+}
+
+.user {
+    text-align: right;
+}
+
+.bot {
+    text-align: left;
 }
