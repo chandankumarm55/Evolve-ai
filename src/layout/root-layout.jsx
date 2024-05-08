@@ -23,12 +23,12 @@ export default function RootLayout() {
                 <div className="container">
                     <div className="d-flex justify-content-between align-items-center">
                         <h4 className="mb-0">
-                            <Link to='/dashboard' className=" text-decoration-none">Evolve-AI</Link>
+                            <Link to='/' className=" text-decoration-none"><h3>Evolve-AI</h3></Link>
                         </h4>
                         <div>
                             <SignedOut>
-                                <Link to="/sign-in" className={ `btn ${isSignInPage ? 'btn-primary' : 'btn-dark'} me-2` }>Sign In</Link>
-                                <Link to='/sign-up' className={ `btn ${isSignUpPage ? 'btn-primary' : 'btn-dark'}` }>Sign Up</Link>
+                                <Link to="/sign-in" className={ `btn ${isSignInPage ? 'btn-success' : 'btn-dark'} me-2 rounded` }>Sign In</Link>
+                                <Link to='/sign-up' className={ `btn ${isSignUpPage ? 'btn-success' : 'btn-dark'} rounded` }>Sign Up</Link>
                             </SignedOut>
                             <SignedIn>
                                 <UserButton className="btn btn-light" />

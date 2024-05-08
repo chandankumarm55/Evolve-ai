@@ -56,7 +56,7 @@ function Dictionary() {
     return (
         <div className="container mt-1">
             <div className="d-flex align-items-center mb-3">
-                <Link to='/'>
+                <Link to='/explore'>
                     <div>
                         <FaArrowLeft size={ 24 } />
                     </div>

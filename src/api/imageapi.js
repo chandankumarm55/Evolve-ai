@@ -1,6 +1,4 @@
 import axios from "axios";
-
-
 export const fetchImages = async(
     promptCall,
     seedValue,

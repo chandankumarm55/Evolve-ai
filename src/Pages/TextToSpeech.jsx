@@ -59,14 +59,14 @@ const TextToSpeech = () => {
     };
 
     return (
-        <div className="container text-center mt-5">
+        <div className="container text-center ">
             <div className="row">
                 <div className="col-auto d-flex align-items-center">
-                    <Link to='/'>
-                        <FaArrowLeft style={ { marginRight: '10px' } } />
+                    <Link to='/explore'>
+                        <FaArrowLeft style={ { marginRight: '10px' } } size={ 24 } />
                     </Link>
 
-                    <h3 className="mb-0">Text-to-Speech Conversion</h3>
+                    <h3 className="mb-0">Text-to-Speech </h3>
                 </div>
             </div>
             <div className="row">

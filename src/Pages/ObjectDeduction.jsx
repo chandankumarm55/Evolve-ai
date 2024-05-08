@@ -67,7 +67,7 @@ const Object = () => {
         <div className='object-container'>
             <div className="row mb-5">
                 <div className="col-auto d-flex align-items-center">
-                    <Link to='/'>
+                    <Link to='/explore'>
                         <FaArrowLeft style={ { marginRight: '10px' } } size={ 25 } />
                     </Link>
 
