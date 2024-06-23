@@ -28,7 +28,6 @@ Built using React.js and  ensuring a dynamic and responsive user interface.
   - **Image Generation:** Utilized [Rapid API](https://rapidapi.com/hub) for generating images.
   - **Language Translation:** Integrated translation services via [Rapid API](https://rapidapi.com/hub).
   - **Dictionary Services:** Provided dictionary functionalities through [Rapid API](https://rapidapi.com/hub).
-  - **Object Detection:** Enabled object detection features via [Rapid API](https://rapidapi.com/hub).
   - **Joke Generation:** Implemented joke generation using [Rapid API](https://rapidapi.com/hub).
 
 - **Responsive Design:** Ensured the application is mobile-friendly and visually appealing on all devices using Bootstrap.
