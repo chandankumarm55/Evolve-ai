@@ -1,70 +1,71 @@
-# Getting Started with Create React App
+# Evole AI
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## Description
 
-## Available Scripts
+A dynamic and responsive web application built using React.js and Redux, designed to provide a seamless user experience with extensive features and integrations.
 
-In the project directory, you can run:
+## Frontend
 
-### `npm start`
+Built using React.js and  ensuring a dynamic and responsive user interface.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## Screenshots
+![Screenshot 1](./eve1.jpg)
+![Screenshot 2](./eve2.jpg)
+![Screenshot 3](./eve3.jpg)
+![Screenshot 4](./eve4.jpg)
+![Screenshot 4](./eve5.jpg)
+![Screenshot 4](./eve6.jpg)
+![Screenshot 4](./eve7.jpg)
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## Features
 
-### `npm test`
+- **User Authentication:** 
+  - Integrated Clerk for user authentication.
+  - Users can log in via phone number verification, email verification, or social media accounts like GitHub.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+- **AI Integration:**
+  - **Conversational AI:** Leveraged [Gemini API](https://aistudio.google.com/app/apikey) for sophisticated conversational capabilities.
+  - **Image Generation:** Utilized [Rapid API](https://rapidapi.com/hub) for generating images.
+  - **Language Translation:** Integrated translation services via [Rapid API](https://rapidapi.com/hub).
+  - **Dictionary Services:** Provided dictionary functionalities through [Rapid API](https://rapidapi.com/hub).
+  - **Object Detection:** Enabled object detection features via [Rapid API](https://rapidapi.com/hub).
+  - **Joke Generation:** Implemented joke generation using [Rapid API](https://rapidapi.com/hub).
 
-### `npm run build`
+- **Responsive Design:** Ensured the application is mobile-friendly and visually appealing on all devices using Bootstrap.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## Technologies Used
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+- **Frontend:** React.js, Redux
+- **Authentication:** Clerk
+- **AI Services:** Gemini API, Rapid API
+- **Design:** Bootstrap, Responsive Design
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## Installation
 
-### `npm run eject`
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/evole-ai.git
+   cd evole-ai
+   ```
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+2. Install the dependencies
+```bash
+npm install
+```
+3.Set up environment variables:
+Create a .env file in the root directory.
+Add the necessary API keys and configurations for Clerk, Gemini API, and Rapid API.
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+4. Start the development server:
+```bash
+npm start
+```
+Usage
+User Authentication:
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+Users can sign up or log in using phone number, email, or social media accounts.
+AI Features:
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+Access conversational AI, image generation, language translation, dictionary services, object detection, and joke generation through the application interface.
 
-## Learn More
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
