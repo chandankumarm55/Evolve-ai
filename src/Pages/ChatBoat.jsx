@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from "react";
 import axios from "axios";
 import { backEndUrl } from "../utils/BackendUrl";
-import { FaArrowUp } from "react-icons/fa";
+import { FaArrowLeft, FaArrowUp } from "react-icons/fa";
 import { CiNoWaitingSign } from "react-icons/ci";
 import { FaRegUserCircle } from "react-icons/fa";
+import { Link } from "react-router-dom";
 
 const ChatBoat = () => {
     const [userPrompt, setUserPrompt] = useState("");
@@ -48,8 +49,14 @@ const ChatBoat = () => {
 
     return (
         <div className="container-fluid h-100 d-flex flex-column chat-box-container">
+            <Link to='/explore'>
+                <div>
+                    <FaArrowLeft size={ 24 } />
+                </div>
+            </Link>
             <p style={ { color: 'green', fontSize: '10px', textAlign: 'center' } }>If the Boat is not responsing , it means the free version of the API is being used.</p>
             <div className="row flex-grow-1 messages border rounded">
+
                 <div className="col">
                     <div className="chat-box  ">
                         { messages.map((message, index) => (
