@@ -1,5 +1,4 @@
 import React from 'react';
-import ReactDOM from 'react-dom';
 import { Toaster } from 'react-hot-toast';
 import './App.css';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';

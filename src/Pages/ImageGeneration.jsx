@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { FaArrowLeft, FaArrowRight } from "react-icons/fa";
+import { FaArrowLeft } from "react-icons/fa";
 import ImageBox from '../components/ImageBox';
 import RecentResults from '../components/RecentResults';
 import { getRandom, loaderMessages, promptIdeas } from '../utils/Prompt';
 import { fetchImages } from '../api/imageapi';
-import { FaHistory } from "react-icons/fa";
 import { Link } from 'react-router-dom';
 
 const ImageGeneration = () => {

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import Axios from "axios";
-import toast from 'react-hot-toast'
+import toast from 'react-hot-toast';
 import { FaSearch } from "react-icons/fa";
 import { FcSpeaker } from "react-icons/fc";
 import { FaArrowLeft } from 'react-icons/fa';
@@ -9,11 +9,10 @@ import { Link } from "react-router-dom";
 function Dictionary() {
     const [data, setData] = useState("");
     const [searchWord, setSearchWord] = useState("");
-    const [audioError, setAudioError] = useState(false);
     const [noWordError, setNoWordError] = useState(false);
 
     async function getMeaning() {
-        setData('')
+        setData('');
         try {
             const response = await Axios.get(
                 `https://api.dictionaryapi.dev/api/v2/entries/en_US/${searchWord}`
@@ -23,35 +22,28 @@ function Dictionary() {
                 setNoWordError(true);
             } else {
                 setData(response.data[0]);
-                setAudioError(false);
                 setNoWordError(false);
-                console.log(data)
+                console.log(data);
             }
-
         } catch (error) {
             console.error("Error fetching data:", error);
             setNoWordError(true);
         }
     }
+
     const playAudio = () => {
-        console.log('aduio')
+        console.log('audio');
         if (data && data.phonetics && data.phonetics.length >= 2) {
             let audioUrl = data.phonetics[1].audio;
-            console.log(audioUrl)
+            console.log(audioUrl);
             if (audioUrl) {
                 let audio = new Audio(audioUrl);
-                audio.onerror = () => {
-                    setAudioError(true);
-                };
                 audio.play();
             } else {
-                toast.error('Sorry faild to load audio')
+                toast.error('Sorry, failed to load audio');
             }
         }
     }
-
-
-
 
     return (
         <div className="container mt-1">
@@ -76,9 +68,7 @@ function Dictionary() {
                 <button
                     className="btn btn-outline-success"
                     type="button"
-                    onClick={ () => {
-                        getMeaning();
-                    } }
+                    onClick={ getMeaning }
                 >
                     <FaSearch size="20px" />
                 </button>
@@ -86,12 +76,8 @@ function Dictionary() {
             { data && (
                 <div className="showResults">
                     <h2>
-                        { data.word }
-                        { " " }
-                        <button
-                            className="btn btn-link"
-                            onClick={ playAudio }
-                        >
+                        { data.word }{ " " }
+                        <button className="btn btn-link" onClick={ playAudio }>
                             <FcSpeaker size="26px" />
                         </button>
                     </h2>
@@ -100,13 +86,10 @@ function Dictionary() {
                     <h4>Definition:</h4>
                     <p>{ data.meanings[0].definitions[0].definition }</p>
                     <h4>Example:</h4>
-                    <p>{ data.meanings[0].definitions[0].example ? data.meanings[0].definitions[0].example : 'no example generated' }</p>
+                    <p>{ data.meanings[0].definitions[0].example || 'No example available' }</p>
                 </div>
             ) }
-            { noWordError && (
-                <p className="text-danger">No such word exists</p>
-            ) }
-
+            { noWordError && <p className="text-danger">No such word exists</p> }
         </div>
     );
 }

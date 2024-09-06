@@ -12,7 +12,7 @@ export default function DashboardLayout() {
         if (isLoaded && !userId) {
             navigate("/sign-in")
         }
-    }, [isLoaded])
+    }, [isLoaded, navigate, userId])  // Added 'navigate' and 'userId' to the dependency array
 
     if (!isLoaded) return "Loading..."
 

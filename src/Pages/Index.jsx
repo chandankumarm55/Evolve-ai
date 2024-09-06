@@ -1,11 +1,9 @@
 import React from 'react';
-import { useAuth } from '@clerk/clerk-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import Footer from '../components/Footer';
 
 
 export default function IndexPage() {
-    const { userId, isLoaded } = useAuth();
     const navigate = useNavigate();
 
     const handleExploreClick = () => {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaArrowLeft } from 'react-icons/fa'
+import { FaArrowLeft } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 
 const TextToSpeech = () => {
@@ -8,11 +8,11 @@ const TextToSpeech = () => {
     const [rate, setRate] = useState(0.5);
     const [pitch, setPitch] = useState(0.5);
     const [text, setText] = useState('');
-    const synth = window.speechSynthesis;
     const [isSpeaking, setIsSpeaking] = useState(false);
     const [resume, setResume] = useState('Pause');
 
     useEffect(() => {
+        const synth = window.speechSynthesis; // Move synth inside useEffect
         const getVoices = () => {
             const synthVoices = synth.getVoices();
             setVoices(synthVoices);
@@ -24,6 +24,7 @@ const TextToSpeech = () => {
     }, []);
 
     const speak = () => {
+        const synth = window.speechSynthesis; // Define synth in the function where it's used
         if (synth.speaking) {
             return;
         }
@@ -42,11 +43,13 @@ const TextToSpeech = () => {
     };
 
     const stopSpeaking = () => {
+        const synth = window.speechSynthesis;
         synth.cancel();
         setIsSpeaking(false);
     };
 
     const pauseResumeSpeaking = () => {
+        const synth = window.speechSynthesis;
         if (synth.paused) {
             synth.resume();
             setResume('Pause');
@@ -59,22 +62,18 @@ const TextToSpeech = () => {
     };
 
     return (
-        <div className="container text-center ">
+        <div className="container text-center">
             <div className="row">
                 <div className="col-auto d-flex align-items-center">
                     <Link to='/explore'>
                         <FaArrowLeft style={ { marginRight: '10px' } } size={ 24 } />
                     </Link>
-
-                    <h3 className="mb-0">Text-to-Speech </h3>
+                    <h3 className="mb-0">Text-to-Speech</h3>
                 </div>
             </div>
             <div className="row">
                 <div className="col-lg-8 mx-auto">
                     <div className="form-group">
-                        <div id="front-text" className="text-success">
-
-                        </div>
                         <textarea
                             className="form-control form-control-lg mt-3"
                             placeholder="Enter the text..."

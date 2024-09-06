@@ -4,7 +4,6 @@ import { backEndUrl } from "../utils/BackendUrl";
 import { FaArrowUp } from "react-icons/fa";
 import { CiNoWaitingSign } from "react-icons/ci";
 import { FaRegUserCircle } from "react-icons/fa";
-import { PiOpenAiLogoFill } from "react-icons/pi";
 
 const ChatBoat = () => {
     const [userPrompt, setUserPrompt] = useState("");
@@ -59,7 +58,7 @@ const ChatBoat = () => {
                                 className={ `mb-3 message ${message.type === "user" ? "user" : "bot"
                                     }` }
                             >
-                                { message.type == "bot" ? (
+                                { message.type === "bot" ? (
                                     <svg
                                         xmlns="http://www.w3.org/2000/svg"
                                         width="0.99em"

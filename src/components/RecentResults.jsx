@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { FaHistory } from 'react-icons/fa';
 
 const RecentResults = (props) => {
-    const recentImages = JSON.parse(localStorage.getItem('imagegeneration')) || [];
+    // Use useMemo to ensure recentImages is only initialized once
+    const recentImages = useMemo(() => JSON.parse(localStorage.getItem('imagegeneration')) || [], []);
     const [recentImagesStored, setRecentImagesStored] = useState(recentImages);
 
     const handleClick = (value) => () => {
@@ -22,7 +23,7 @@ const RecentResults = (props) => {
             localStorage.setItem('imagegeneration', JSON.stringify(updatedRecentImages));
             setRecentImagesStored(updatedRecentImages);
         }
-    }, [props.promptQuery, props.imageResult]);
+    }, [props.promptQuery, props.imageResult, recentImages]);
 
     return (
         <div>

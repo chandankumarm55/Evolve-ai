@@ -1,11 +1,10 @@
 import { load } from '@tensorflow-models/coco-ssd';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import Webcam from 'react-webcam';
 import { renderPredictions } from '../utils/renderPredictions';
-import * as tf from '@tensorflow/tfjs';
+// Removed unused tf import
 import { Link } from 'react-router-dom';
-import { FaArrowLeft } from 'react-icons/fa'
-
+import { FaArrowLeft } from 'react-icons/fa';
 
 const Object = () => {
     const [isWebcamActive, setIsWebcamActive] = useState(true);
@@ -13,19 +12,7 @@ const Object = () => {
     const webcamRef = useRef(null);
     const canvasRef = useRef(null);
 
-    let detectInterval;
-
-    const runCoco = async () => {
-        setLoading(true);
-        const net = await load();
-        setLoading(false);
-
-        detectInterval = setInterval(() => {
-            runObjectDetection(net);
-        }, 10);
-    };
-
-    const runObjectDetection = async (net) => {
+    const runObjectDetection = useCallback(async (net) => {
         if (canvasRef.current && webcamRef.current !== null && webcamRef.current.video?.readyState === 4) {
             canvasRef.current.width = webcamRef.current.video.videoWidth;
             canvasRef.current.height = webcamRef.current.video.videoHeight;
@@ -36,9 +23,21 @@ const Object = () => {
             const context = canvasRef.current.getContext('2d');
             renderPredictions(detectedObjects, context);
         }
-    };
+    }, []);
 
-    const showMyVideo = () => {
+    const runCoco = useCallback(async () => {
+        setLoading(true);
+        const net = await load();
+        setLoading(false);
+
+        const detectInterval = setInterval(() => {
+            runObjectDetection(net);
+        }, 10);
+
+        return () => clearInterval(detectInterval); // Clean up the interval on unmount
+    }, [runObjectDetection]);
+
+    const showMyVideo = useCallback(() => {
         if (webcamRef.current !== null && webcamRef.current.video?.readyState === 4) {
             const myVideoWidth = webcamRef.current.video.videoWidth;
             const myVideoHeight = webcamRef.current.video.videoHeight;
@@ -46,12 +45,12 @@ const Object = () => {
             webcamRef.current.video.width = myVideoWidth;
             webcamRef.current.video.height = myVideoHeight;
         }
-    };
+    }, []);
 
     useEffect(() => {
         runCoco();
         showMyVideo();
-    }, []);
+    }, [runCoco, showMyVideo]); // Added runCoco and showMyVideo to dependency array
 
     const toggleWebcam = () => {
         setIsWebcamActive(!isWebcamActive);
@@ -75,7 +74,7 @@ const Object = () => {
                 </div>
             </div>
             { isLoading ? (
-                <div className='loading-text' >Loading</div>
+                <div className='loading-text'>Loading</div>
             ) : (
                 <div>
                     <div className="webcam-container">
