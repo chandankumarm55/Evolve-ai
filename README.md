@@ -1,5 +1,5 @@
 # Evole AI
-
+addingmore features idea - > https://chatgpt.com/share/673d6bd6-e2d8-800b-b0db-695fdf959054
 ## Description
 
 A dynamic and responsive web application built using React.js and Redux, designed to provide a seamless user experience with extensive features and integrations.
