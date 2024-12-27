@@ -1,2 +1,0 @@
-export const NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = 'pk_test_aG9seS1iaXJkLTEzLmNsZXJrLmFjY291bnRzLmRldiQ'
-export const CLERK_SECRET_KEY = ' sk_test_2DUjZjd2IdLVd1EIkZJyhBLuW8lnxSZggxKMozaKAN'
