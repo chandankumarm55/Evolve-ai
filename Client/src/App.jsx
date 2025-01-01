@@ -49,7 +49,6 @@
 // }
 
 // export default App;
-
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ClerkProvider } from '@clerk/clerk-react';
@@ -60,12 +59,14 @@ import DashBoardPage from './Pages/DashBoardPage';
 import DashboardLayout from './components/ClearkComponents/DashboardLayout';
 import RootLayout from './components/ClearkComponents/RootLayout';
 import { NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY } from './components/ClearkComponents/Constant';
+import './App.css'; // Import the updated CSS
+import SignUp from './Pages/SingUp';
 
 // Clerk Publishable Key
-const PUBLISHABLE_KEY = NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+const PUBLISHABLE_KEY = NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
 if (!PUBLISHABLE_KEY) {
-  throw new Error("Missing Clerk Publishable Key");
+  throw new Error('Missing Clerk Publishable Key');
 }
 
 function App() {
@@ -73,18 +74,20 @@ function App() {
     <ClerkProvider publishableKey={ PUBLISHABLE_KEY }>
       <ThemeProvider>
         <BrowserRouter>
-          <Routes>
-            {/* Public Routes */ }
-            <Route element={ <RootLayout /> }>
-              <Route path="/" element={ <LandingPage /> } />
-              <Route path="/Evolve" element={ <Home /> } />
-            </Route>
+          <div className="app-container">
+            <Routes>
+              <Route path='/sign-up' element={ <SignUp /> } />
+              <Route element={ <RootLayout /> }>
+                <Route path="/" element={ <LandingPage /> } />
+                <Route path="/Evolve" element={ <Home /> } />
+              </Route>
 
-            {/* Protected Routes */ }
-            <Route element={ <DashboardLayout /> }>
-              <Route path="/dashboard" element={ <DashBoardPage /> } />
-            </Route>
-          </Routes>
+              {/* Protected Routes */ }
+              <Route element={ <DashboardLayout /> }>
+                <Route path="/dashboard" element={ <DashBoardPage /> } />
+              </Route>
+            </Routes>
+          </div>
         </BrowserRouter>
       </ThemeProvider>
     </ClerkProvider>
