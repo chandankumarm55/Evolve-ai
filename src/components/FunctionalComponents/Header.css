@@ -1,0 +1,92 @@
+.header-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 50;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    /* For Safari */
+    /* Light theme */
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+:is([data-theme="dark"]) .header-container {
+    background-color: rgba(17, 17, 17, 0.8);
+    /* Dark theme */
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.animated-button {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    background: transparent !important;
+}
+
+
+/* Gradient border animation */
+
+.animated-button::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient( 90deg, theme("colors.purple.600"), theme("colors.blue.500"), theme("colors.purple.600"));
+    background-size: 200% 100%;
+    animation: moveGradient 3s linear infinite;
+    opacity: 0.8;
+    z-index: 0;
+}
+
+
+/* Inner button content */
+
+.animated-button>* {
+    position: relative;
+    z-index: 1;
+}
+
+
+/* Theme-aware background */
+
+.animated-button::after {
+    content: "";
+    position: absolute;
+    inset: 1px;
+    background-color: hsl(var(--background));
+    border-radius: inherit;
+    transition: all 0.3s ease;
+}
+
+
+/* Hover effects */
+
+.animated-button:hover::after {
+    background-color: transparent;
+}
+
+.animated-button:hover {
+    transform: scale(1.02);
+    color: hsl(var(--background));
+}
+
+.animated-button:active {
+    transform: scale(0.98);
+}
+
+@keyframes moveGradient {
+    0% {
+        background-position: 0% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+
+/* Dark mode adjustments */
+
+:is([data-theme="dark"]) .animated-button::before {
+    opacity: 0.6;
+}
