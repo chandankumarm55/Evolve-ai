@@ -11,21 +11,12 @@ const SignUpPage = () => {
             }` }>
             <div className={ `max-w-md w-full space-y-8 rounded-xl shadow-2xl p-8 ${isDark ? 'bg-gray-800' : 'bg-white'
                 }` }>
-                <div className="text-center">
-                    <h2 className={ `text-3xl font-extrabold ${isDark ? 'text-white' : 'text-gray-900'
-                        }` }>
-                        Create your account
-                    </h2>
-                    <p className={ `mt-2 text-sm ${isDark ? 'text-gray-300' : 'text-gray-600'
-                        }` }>
-                        Join us to explore AI possibilities
-                    </p>
-                </div>
 
                 <div className={ `mt-8 ${isDark ? 'clerk-dark' : ''
                     }` }>
                     <SignUp
                         path="/sign-up"
+                        afterSignUpUrl="/dashboard" // Redirect to /dashboard after sign-up
                         appearance={ {
                             elements: {
                                 formButtonPrimary:

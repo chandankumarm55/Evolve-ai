@@ -76,9 +76,10 @@ function App() {
         <BrowserRouter>
           <div className="app-container">
             <Routes>
-              <Route path='/sign-up' element={ <SignUp /> } />
+              <Route path="/" element={ <LandingPage /> } />
+              <Route path='/sign-up/*' element={ <SignUp /> } />
               <Route element={ <RootLayout /> }>
-                <Route path="/" element={ <LandingPage /> } />
+
                 <Route path="/Evolve" element={ <Home /> } />
               </Route>
 
@@ -87,7 +88,7 @@ function App() {
                 <Route path="/dashboard" element={ <DashBoardPage /> } />
               </Route>
             </Routes>
-          </div>
+            *         </div>
         </BrowserRouter>
       </ThemeProvider>
     </ClerkProvider>

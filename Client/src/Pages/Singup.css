@@ -1,0 +1,29 @@
+.clerk-dark {
+  --clerk-background-primary: transparent;
+  --clerk-background-secondary: rgba(55, 65, 81, 0.5);
+  --clerk-text-color-primary: #ffffff;
+  --clerk-text-color-secondary: #9ca3af;
+  --clerk-button-background-color: linear-gradient(to right, #3b82f6, #8b5cf6);
+  --clerk-button-background-color-hover: linear-gradient(
+    to right,
+    #2563eb,
+    #7c3aed
+  );
+  --clerk-border-color: #4b5563;
+}
+
+/* Smooth transitions */
+* {
+  transition: all 0.2s ease-in-out;
+}
+
+/* Button hover effect */
+button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Input focus animation */
+input:focus {
+  transform: scale(1.01);
+}
