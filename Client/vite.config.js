@@ -1,7 +1,14 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
 
-// https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
-})
+    plugins: [react()],
+    build: {
+        rollupOptions: {
+            external: [
+                '@clerk/clerk-react', // Add external libraries you might need here
+                'three' // If you need three.js externally
+            ],
+        },
+    },
+});
