@@ -55,12 +55,18 @@ import { ClerkProvider } from '@clerk/clerk-react';
 import { ThemeProvider } from './contexts/ThemeContext';
 import LandingPage from './Pages/LandingPage';
 import Home from './Pages/Home';
-import DashBoardPage from './Pages/DashBoardPage';
 import DashboardLayout from './components/ClearkComponents/DashboardLayout';
 import RootLayout from './components/ClearkComponents/RootLayout';
 import { NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY } from './components/ClearkComponents/Constant';
-import './App.css'; // Import the updated CSS
+import './App.css';
 import SignUp from './Pages/SingUp';
+import { Conversation } from './Pages/Services/Conversation';
+import { Dashboard } from './components/Layouts/Dashboard';
+import { ImageGeneration } from './Pages/Services/ImageGeneration';
+import { TextToSpeech } from './Pages/Services/TextToSpeech';
+import { JokeGenerator } from './Pages/Services/JokeGenerator';
+import { Translator } from './Pages/Services/Translator';
+import { Dictionary } from './Pages/Services/Dictionary';
 
 // Clerk Publishable Key
 const PUBLISHABLE_KEY = NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
@@ -84,11 +90,17 @@ function App() {
               </Route>
 
               {/* Protected Routes */ }
-              <Route element={ <DashboardLayout /> }>
-                <Route path="/dashboard" element={ <DashBoardPage /> } />
+              <Route path="/dashboard" element={ <Dashboard /> }>
+                <Route index element={ <Conversation /> } />
+                <Route path="conversation" element={ <Conversation /> } />
+                <Route path="image-generation" element={ <ImageGeneration /> } />
+                <Route path='text-to-speech' element={ <TextToSpeech /> } />
+                <Route path='joke-generator' element={ <JokeGenerator /> } />
+                <Route path='translator' element={ <Translator /> } />
+                <Route path='dictionary' element={ <Dictionary /> } />
               </Route>
             </Routes>
-            *         </div>
+          </div>
         </BrowserRouter>
       </ThemeProvider>
     </ClerkProvider>
