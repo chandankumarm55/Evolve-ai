@@ -7,8 +7,14 @@ export default defineConfig({
         rollupOptions: {
             external: [
                 '@clerk/clerk-react', // Add external libraries you might need here
-                'three' // If you need three.js externally
+                'three', // If you need three.js externally
             ],
+            output: {
+                globals: {
+                    '@clerk/clerk-react': 'ClerkReact',
+                    'three': 'THREE',
+                },
+            },
         },
     },
 });
