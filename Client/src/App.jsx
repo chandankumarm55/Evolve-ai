@@ -67,6 +67,7 @@ import { TextToSpeech } from './Pages/Services/TextToSpeech';
 import { JokeGenerator } from './Pages/Services/JokeGenerator';
 import { Translator } from './Pages/Services/Translator';
 import { Dictionary } from './Pages/Services/Dictionary';
+import DashboardIndex from './Pages/Services/DashboardIndex';
 
 // Clerk Publishable Key
 const PUBLISHABLE_KEY = NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
@@ -91,7 +92,7 @@ function App() {
 
               {/* Protected Routes */ }
               <Route path="/dashboard" element={ <Dashboard /> }>
-                <Route index element={ <Conversation /> } />
+                <Route index element={ <DashboardIndex /> } />
                 <Route path="conversation" element={ <Conversation /> } />
                 <Route path="image-generation" element={ <ImageGeneration /> } />
                 <Route path='text-to-speech' element={ <TextToSpeech /> } />
