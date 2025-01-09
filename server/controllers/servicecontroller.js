@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import axios from 'axios'
 
 const genAI = new GoogleGenerativeAI('AIzaSyDHCRgVEuqo6e54gAf3fR2k8Q4JyGfcz2w');
 const Conversationmodel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
@@ -27,42 +28,50 @@ export const ConversationService = async(req, res) => {
 };
 
 
-const Imagemodel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+
 export const ImageGeneration = async(req, res) => {
     try {
         const { prompt } = req.body;
 
-        // Validate input prompt
         if (!prompt) {
             return res.status(400).json({ error: "Prompt is required!" });
         }
 
-        // Generate content using Gemini API
-        const result = await Imagemodel.generateContent({
-            contents: [{
-                parts: [{ text: prompt }],
-            }, ],
+        const seedValue = 42;
+        const dropDownValue = "EulerAncestralDiscreteScheduler";
+        const radioValue = 50;
+        const options = {
+            method: "POST",
+            url: "https://api.segmind.com/v1/sdxl1.0-txt2img",
+            headers: {
+                "x-api-key": process.env.SEGMIND_API_KEY, // Use API key from .env file
+                "Content-Type": "application/json",
+            },
+            responseType: "arraybuffer", // Receive binary image data
+            data: {
+                prompt: prompt,
+                seed: seedValue,
+                scheduler: dropDownValue,
+                num_inference_steps: radioValue,
+                negative_prompt: "NONE",
+                samples: "1",
+                guidance_scale: "7.5",
+                strength: "1",
+                shape: 512,
+            },
+        };
+
+        const response = await axios.request(options);
+
+        const base64Image = Buffer.from(response.data, "binary").toString("base64");
+
+        return res.status(200).json({
+            message: "Image generated successfully!",
+            image: `data:image/jpeg;base64,${base64Image}`,
         });
-
-        // Log the full response for debugging
-        console.log("Full Response:", JSON.stringify(result, null, 2));
-
-        // Check if result and candidates exist
-        if (!result || !result.candidates || result.candidates.length === 0) {
-            return res.status(500).json({ error: "No response generated from AI." });
-        }
-
-        const candidate = result.candidates[0];
-        if (!candidate.content || !candidate.content.parts || candidate.content.parts.length === 0) {
-            return res.status(500).json({ error: "Invalid response format." });
-        }
-
-        const text = candidate.content.parts[0].text;
-
-        // Return the generated content
-        return res.status(200).json({ message: text });
     } catch (error) {
-        console.error("Image Generation Error:", error);
+        console.error("Error while generating image:", error);
         return res.status(500).json({ error: "Internal server error!" });
     }
 };
