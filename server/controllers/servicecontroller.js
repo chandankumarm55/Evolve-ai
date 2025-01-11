@@ -45,10 +45,10 @@ export const ImageGeneration = async(req, res) => {
             method: "POST",
             url: "https://api.segmind.com/v1/sdxl1.0-txt2img",
             headers: {
-                "x-api-key": process.env.SEGMIND_API_KEY, // Use API key from .env file
+                "x-api-key": process.env.SEGMIND_API_KEY,
                 "Content-Type": "application/json",
             },
-            responseType: "arraybuffer", // Receive binary image data
+            responseType: "arraybuffer",
             data: {
                 prompt: prompt,
                 seed: seedValue,
@@ -75,3 +75,29 @@ export const ImageGeneration = async(req, res) => {
         return res.status(500).json({ error: "Internal server error!" });
     }
 };
+
+
+const axios = require('axios');
+
+const apiKey = 'LA-88ddea799df34f4ead49e36a8f59d86cbdb845a0908144af92852ce62c5dbb4c';
+const apiEndpoint = 'https://api.meta.ai/v1/';
+
+const headers = {
+    'Authorization': `Bearer ${apiKey}`,
+    'Content-Type': 'application/json'
+};
+
+const params = {
+    'model': 'llama',
+    'prompt': 'Hello, world!',
+    'temperature': 0.7,
+    'max_tokens': 100
+};
+
+axios.post(apiEndpoint + 'generate', params, { headers })
+    .then(response => {
+        console.log(response.data);
+    })
+    .catch(error => {
+        console.error(error);
+    });

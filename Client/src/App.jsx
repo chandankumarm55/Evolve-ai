@@ -9,7 +9,7 @@ import RootLayout from './components/ClearkComponents/RootLayout';
 import { NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY } from './components/ClearkComponents/Constant';
 import './App.css';
 import SignUp from './Pages/SingUp';
-import { Conversation } from './Pages/Services/Conversation';
+import Conversation from './Pages/Services/Conversation/Conversation';
 import { Dashboard } from './components/Layouts/Dashboard';
 import { ImageGeneration } from './Pages/Services/ImageGeneration';
 import { TextToSpeech } from './Pages/Services/TextToSpeech';
@@ -17,6 +17,7 @@ import { JokeGenerator } from './Pages/Services/JokeGenerator';
 import { Translator } from './Pages/Services/Translator';
 import { Dictionary } from './Pages/Services/Dictionary';
 import DashboardIndex from './Pages/Services/DashboardIndex';
+import SpeechToText from './Pages/Services/SpeechToText/SpeechToText';
 
 // Clerk Publishable Key
 const PUBLISHABLE_KEY = NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
@@ -45,6 +46,7 @@ function App() {
                   <Route index element={ <DashboardIndex /> } />
                   <Route path="conversation" element={ <Conversation /> } />
                   <Route path="image-generation" element={ <ImageGeneration /> } />
+                  <Route path="speech-to-text" element={ <SpeechToText /> } />
                   <Route path='text-to-speech' element={ <TextToSpeech /> } />
                   <Route path='joke-generator' element={ <JokeGenerator /> } />
                   <Route path='translator' element={ <Translator /> } />
