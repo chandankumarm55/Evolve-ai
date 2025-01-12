@@ -40,7 +40,6 @@ function App() {
                 <Route path="/Evolve" element={ <Home /> } />
               </Route>
 
-
               <Route element={ <DashboardLayout /> }>
                 <Route path="/dashboard" element={ <Dashboard /> } >
                   <Route index element={ <DashboardIndex /> } />

@@ -29,7 +29,7 @@ export const generateResponse = async (messages, userInput) => {
                 timeout: 10000, // Timeout of 10 seconds
             }
         );
-
+        console.log(response.data.choices[0].message.content);
         return response.data.choices[0].message.content;
     } catch (error) {
         const errorMessage = error.response?.data?.error || error.message;

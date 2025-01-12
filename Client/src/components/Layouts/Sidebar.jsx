@@ -10,6 +10,7 @@ import {
     X,
     Languages,
     BookOpen,
+    Speech
 } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 
@@ -21,6 +22,9 @@ const menuItems = [
     { icon: Smile, label: 'Joke Generator', path: '/dashboard/joke-generator' },
     { icon: Languages, label: 'Translator', path: '/dashboard/translator' },
     { icon: BookOpen, label: 'Dictionary', path: '/dashboard/dictionary' },
+    { icon: Speech, label: 'Speech To Text', path: '/dashboard/speech-to-text' },
+
+
 ];
 
 
