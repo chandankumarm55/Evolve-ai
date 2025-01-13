@@ -18,6 +18,7 @@ import { Translator } from './Pages/Services/Translator';
 import { Dictionary } from './Pages/Services/Dictionary';
 import DashboardIndex from './Pages/Services/DashboardIndex';
 import SpeechToText from './Pages/Services/SpeechToText/SpeechToText';
+import QRCodeGenerator from './Pages/Services/QRCodeGenerator/QRCodeGenerator';
 
 // Clerk Publishable Key
 const PUBLISHABLE_KEY = NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
@@ -49,6 +50,7 @@ function App() {
                   <Route path='text-to-speech' element={ <TextToSpeech /> } />
                   <Route path='joke-generator' element={ <JokeGenerator /> } />
                   <Route path='translator' element={ <Translator /> } />
+                  <Route path='QR-Code-Generator' element={ <QRCodeGenerator /> } />
                   <Route path='dictionary' element={ <Dictionary /> } />
                 </Route>
               </Route>
