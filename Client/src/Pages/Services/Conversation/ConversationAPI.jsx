@@ -26,7 +26,7 @@ export const generateResponse = async (messages, userInput) => {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${API_KEY}`,
                 },
-                timeout: 10000, // Timeout of 10 seconds
+                timeout: 10000,
             }
         );
         console.log(response.data.choices[0].message.content);

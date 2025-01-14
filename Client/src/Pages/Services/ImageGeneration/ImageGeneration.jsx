@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ImageIcon, Loader2, SendIcon, Download } from 'lucide-react';
-import { Card } from "../../components/ui/card";
-import { Input } from "../../components/ui/input";
-import { Button } from "../../components/ui/button";
-import { ServiceContainer } from '../../components/ui/ServiceContainer';
+import { Card } from "../../../components/ui/card";
+import { Input } from "../../../components/ui/input";
+import { Button } from "../../../components/ui/button";
+import { ServiceContainer } from '../../../components/ui/ServiceContainer';
+import { FetchImage } from './FetchImage';
 
 export const ImageGeneration = () => {
     const [images, setImages] = useState([]);
@@ -16,11 +17,10 @@ export const ImageGeneration = () => {
         if (!prompt.trim()) return;
 
         setLoading(true);
-        await new Promise(resolve => setTimeout(resolve, 3000));
 
         setImages(prev => [
             {
-                url: 'https://images.unsplash.com/photo-1707343843437-caacff5cfa74?w=500&h=500',
+                url: `https://image.pollinations.ai/prompt/${prompt}`,
                 prompt: prompt
             },
             ...prev
@@ -29,6 +29,7 @@ export const ImageGeneration = () => {
         setPrompt('');
         setLoading(false);
     };
+
 
     const handleDownload = async (imageUrl) => {
         try {
@@ -59,7 +60,7 @@ export const ImageGeneration = () => {
     );
 
     return (
-        <ServiceContainer title="AI Image Generation">
+        <ServiceContainer >
             <div className="flex-1 overflow-y-auto mb-4 p-4">
                 <AnimatePresence mode="sync">
                     { images.length > 0 ? (

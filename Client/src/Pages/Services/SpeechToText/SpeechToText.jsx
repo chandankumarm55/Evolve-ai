@@ -13,7 +13,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Mic, Copy, StopCircle, Volume2, Languages, Download } from 'lucide-react';
 import { useTheme } from '../../../contexts/ThemeContext';
 
-// Enhanced language selector with more Indian languages
 const LanguageSelector = ({ selectedLanguage, onLanguageChange, languages }) => {
     const { theme } = useTheme();
     const isDark = theme === 'dark';
@@ -215,10 +214,7 @@ const SpeechToText = () => {
                 <Card className={ `p-2 ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
                     }` }>
                     <div className="mb-6">
-                        <h2 className={ `text-lg font-semibold mb-2 ${isDark ? 'text-gray-200' : 'text-gray-800'
-                            }` }>
-                            Voice Recognition
-                        </h2>
+
                         <p className={ `text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'
                             }` }>
                             Speak clearly into your microphone to convert speech to text.
