@@ -13,7 +13,7 @@ const questionsList = [
     "How can I assist you right now?"
 ];
 
-const RandomQuestions = () => {
+const RandomQuestions = ({ onQuestionSelect }) => {
     const [randomQuestions, setRandomQuestions] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
 
@@ -37,8 +37,8 @@ const RandomQuestions = () => {
     }, []);
 
     return (
-        <div className="flex items-center justify-center  w-full  sm:p-4">
-            <Card className="w-full  shadow-lg">
+        <div className="flex items-center justify-center w-full sm:p-4">
+            <Card className="w-full shadow-lg">
                 <CardContent className="p-2 sm:p-6">
                     <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-6">
                         <MessageCircle className="w-6 h-6 sm:w-8 sm:h-8 text-blue-500 flex-shrink-0" />
@@ -52,9 +52,10 @@ const RandomQuestions = () => {
                             <Button
                                 key={ index }
                                 variant="outline"
-                                className="w-full justify-start text-left hover:bg-blue-50 hover:text-blue-600 
-                                         transition-all duration-200 p-3 sm:p-4 h-auto min-h-[48px] 
-                                         whitespace-normal break-words text-sm sm:text-base"
+                                className="w-full justify-start text-left hover:bg-blue-50 hover:text-blue-600
+                                        transition-all duration-200 p-3 sm:p-4 h-auto min-h-[48px]
+                                        whitespace-normal break-words text-sm sm:text-base"
+                                onClick={ () => onQuestionSelect(question) }
                             >
                                 { question }
                             </Button>

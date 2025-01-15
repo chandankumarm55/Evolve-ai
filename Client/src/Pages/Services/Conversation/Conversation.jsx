@@ -1,3 +1,4 @@
+// Conversation.jsx
 import React, { useState, useRef, useEffect } from 'react';
 import MessageList from './MessageList';
 import MessageInput from './MessageInput';
@@ -38,6 +39,7 @@ const Conversation = () => {
                 content: response,
                 timestamp: new Date().toLocaleTimeString(),
             };
+            setInput('');
             setMessages((prev) => [...prev, aiMessage]);
         } catch (error) {
             setMessages((prev) => [
@@ -53,11 +55,16 @@ const Conversation = () => {
         }
     };
 
+    const handleQuestionSelect = (question) => {
+        setInput(question);
+        handleSubmit(question);
+    };
+
     return (
         <ServiceContainer className={ `${isDark ? 'bg-gray-900 text-gray-100' : 'bg-gray-100 text-gray-900'} flex flex-col h-screen` }>
             <div className="flex-1 overflow-y-auto">
                 { messages.length === 0 ? (
-                    <RandomQuestions />
+                    <RandomQuestions onQuestionSelect={ handleQuestionSelect } />
                 ) : (
                     <MessageList messages={ messages } isTyping={ isTyping } messagesEndRef={ messagesEndRef } />
                 ) }

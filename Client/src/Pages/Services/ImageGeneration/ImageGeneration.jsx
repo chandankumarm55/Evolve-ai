@@ -1,116 +1,191 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ImageIcon, Loader2, SendIcon, Download } from 'lucide-react';
-import { Card } from "../../../components/ui/card";
-import { Input } from "../../../components/ui/input";
-import { Button } from "../../../components/ui/button";
+import { ImageIcon, Loader2, Download } from 'lucide-react';
+import { toast } from 'react-toastify';
+import { Button } from '../../../components/ui/button';
 import { ServiceContainer } from '../../../components/ui/ServiceContainer';
-import { FetchImage } from './FetchImage';
+import { ImageCard } from './ImageCard';
+import ImageInputForm from './ImageInputForm';
+
+// Separate component for image processing canvas
+const ImageProcessor = ({ imageUrl, onProcessed }) => {
+    const canvasRef = useRef(null);
+
+    useEffect(() => {
+        const processImage = async () => {
+            const img = new Image();
+            img.crossOrigin = "anonymous"; // Enable CORS
+
+            img.onload = () => {
+                const canvas = canvasRef.current;
+                const ctx = canvas.getContext('2d');
+
+                // Set canvas size to match image dimensions
+                canvas.width = img.width;
+                canvas.height = img.height;
+
+                // Calculate crop height (remove bottom 10% where watermark typically appears)
+                const cropHeight = img.height * 0.9;
+
+                // Draw cropped image
+                ctx.drawImage(img,
+                    0, 0, img.width, cropHeight, // Source rectangle
+                    0, 0, img.width, cropHeight  // Destination rectangle
+                );
+
+                // Get processed image URL
+                const processedUrl = canvas.toDataURL('image/jpeg', 0.9);
+                onProcessed(processedUrl);
+            };
+
+            img.onerror = () => {
+                toast.error('Failed to load image for processing');
+                onProcessed(null);
+            };
+
+            img.src = imageUrl;
+        };
+
+        processImage();
+    }, [imageUrl, onProcessed]);
+
+    return <canvas ref={ canvasRef } style={ { display: 'none' } } />;
+};
+
+// Enhanced ImageCard component with download functionality
+const EnhancedImageCard = ({ image, onDownload }) => {
+    return (
+        <motion.div
+            initial={ { opacity: 0 } }
+            animate={ { opacity: 1 } }
+            exit={ { opacity: 0 } }
+            className="relative rounded-lg overflow-hidden"
+        >
+            <img
+                src={ image.processedUrl || image.url }
+                alt={ image.prompt }
+                className="w-full aspect-square object-cover"
+            />
+            <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/50 to-transparent">
+                <p className="text-white text-sm mb-2">{ image.prompt }</p>
+                <Button
+                    size="sm"
+                    variant="outline"
+                    className="bg-white/90 hover:bg-white"
+                    onClick={ () => onDownload(image) }
+                >
+                    <Download className="w-4 h-4 mr-2" />
+                    Download
+                </Button>
+            </div>
+        </motion.div>
+    );
+};
 
 export const ImageGeneration = () => {
     const [images, setImages] = useState([]);
-    const [loading, setLoading] = useState(false);
+    const [loadingImages, setLoadingImages] = useState(new Map());
     const [prompt, setPrompt] = useState('');
 
-    const handleGenerateImage = async (e) => {
-        e.preventDefault();
-        if (!prompt.trim()) return;
-
-        setLoading(true);
-
-        setImages(prev => [
-            {
-                url: `https://image.pollinations.ai/prompt/${prompt}`,
-                prompt: prompt
-            },
-            ...prev
-        ]);
-
-        setPrompt('');
-        setLoading(false);
-    };
-
-
-    const handleDownload = async (imageUrl) => {
-        try {
-            const response = await fetch(imageUrl);
-            const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `generated-image-${Date.now()}.jpg`;
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
-            document.body.removeChild(a);
-        } catch (error) {
-            console.error('Download failed:', error);
+    const handleImageProcessed = (originalUrl, processedUrl) => {
+        if (processedUrl) {
+            setImages(prev => prev.map(img =>
+                img.url === originalUrl
+                    ? { ...img, processedUrl }
+                    : img
+            ));
         }
     };
 
-    const LoadingCard = () => (
-        <Card className="relative aspect-square p-4 overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent animate-shimmer"
-                style={ { backgroundSize: '200% 100%' } }
-            />
-            <div className="absolute inset-0 flex items-center justify-center">
-                <Loader2 className="w-8 h-8 animate-spin text-primary" />
-            </div>
-        </Card>
-    );
+    const handleDownload = (image) => {
+        const link = document.createElement('a');
+        link.href = image.processedUrl || image.url;
+        link.download = `generated-image-${Date.now()}.jpg`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    const checkImageLoaded = async (imageUrl, promptText, timeoutId) => {
+        try {
+            const response = await fetch(imageUrl, { method: 'HEAD' });
+            if (response.ok) {
+                setLoadingImages(prev => {
+                    const newMap = new Map(prev);
+                    newMap.delete(promptText);
+                    return newMap;
+                });
+                setImages(prev => [{
+                    url: imageUrl,
+                    prompt: promptText,
+                }, ...prev]);
+                clearTimeout(timeoutId);
+            } else {
+                setTimeout(() => checkImageLoaded(imageUrl, promptText, timeoutId), 1000);
+            }
+        } catch (error) {
+            setTimeout(() => checkImageLoaded(imageUrl, promptText, timeoutId), 1000);
+        }
+    };
+
+    const handleGenerateImage = async (inputPrompt) => {
+        setLoadingImages(prev => new Map(prev).set(inputPrompt, true));
+
+        const timeoutId = setTimeout(() => {
+            setLoadingImages(prev => {
+                const newMap = new Map(prev);
+                newMap.delete(inputPrompt);
+                return newMap;
+            });
+            toast.error('Image generation timed out. Please try again.');
+        }, 10000);
+
+        const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(inputPrompt)}`;
+        checkImageLoaded(imageUrl, inputPrompt, timeoutId);
+    };
 
     return (
-        <ServiceContainer >
+        <ServiceContainer>
             <div className="flex-1 overflow-y-auto mb-4 p-4">
                 <AnimatePresence mode="sync">
-                    { images.length > 0 ? (
+                    { (images.length > 0 || loadingImages.size > 0) ? (
                         <motion.div
                             className="grid grid-cols-1 md:grid-cols-2 gap-6"
                             initial={ { opacity: 0 } }
                             animate={ { opacity: 1 } }
                         >
-                            { loading && (
-                                <motion.div
-                                    initial={ { opacity: 0, scale: 0.9 } }
-                                    animate={ { opacity: 1, scale: 1 } }
-                                    exit={ { opacity: 0, scale: 0.9 } }
-                                >
-                                    <LoadingCard />
-                                </motion.div>
-                            ) }
+                            {/* Process images as they're loaded */ }
+                            { images.map((image) => (
+                                <div key={ image.url }>
+                                    { !image.processedUrl && (
+                                        <ImageProcessor
+                                            imageUrl={ image.url }
+                                            onProcessed={ (processedUrl) =>
+                                                handleImageProcessed(image.url, processedUrl)
+                                            }
+                                        />
+                                    ) }
+                                    <EnhancedImageCard
+                                        image={ image }
+                                        onDownload={ handleDownload }
+                                    />
+                                </div>
+                            )) }
 
-                            { images.map((image, index) => (
-                                <motion.div
-                                    key={ index }
-                                    initial={ { opacity: 0, scale: 0.9 } }
-                                    animate={ { opacity: 1, scale: 1 } }
-                                    exit={ { opacity: 0, scale: 0.9 } }
-                                    transition={ { delay: index * 0.1 } }
-                                    className="group"
+                            {/* Loading states */ }
+                            { Array.from(loadingImages.keys()).map((loadingPrompt) => (
+                                <div
+                                    key={ `loading-${loadingPrompt}` }
+                                    className="relative rounded-lg overflow-hidden bg-gray-100 aspect-square"
                                 >
-                                    <Card className="overflow-hidden">
-                                        <div className="relative aspect-square">
-                                            <img
-                                                src={ image.url }
-                                                alt={ `Generated ${index}` }
-                                                className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                                            />
-                                            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/60 to-transparent p-4 transform translate-y-full group-hover:translate-y-0 transition-transform">
-                                                <div className="flex items-start justify-between gap-4">
-                                                    <p className="text-white text-sm flex-1">{ image.prompt }</p>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="shrink-0 h-8 w-8 bg-white/10 hover:bg-white/20 rounded-full transition-colors"
-                                                        onClick={ () => handleDownload(image.url) }
-                                                    >
-                                                        <Download className="w-4 h-4 text-white" />
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </Card>
-                                </motion.div>
+                                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/5 backdrop-blur-sm">
+                                        <Loader2 className="w-8 h-8 animate-spin text-blue-500 mb-2" />
+                                        <p className="text-sm text-gray-600 text-center px-4">
+                                            Generating image for:<br />
+                                            <span className="font-medium">{ loadingPrompt }</span>
+                                        </p>
+                                    </div>
+                                </div>
                             )) }
                         </motion.div>
                     ) : (
@@ -123,52 +198,31 @@ export const ImageGeneration = () => {
                                 <motion.div
                                     animate={ {
                                         scale: [1, 1.1, 1],
-                                        rotate: [0, 5, -5, 0]
+                                        rotate: [0, 5, -5, 0],
                                     } }
                                     transition={ {
                                         duration: 3,
                                         repeat: Infinity,
-                                        repeatType: "reverse"
+                                        repeatType: 'reverse',
                                     } }
                                 >
                                     <ImageIcon size={ 64 } className="mx-auto text-muted-foreground" />
                                 </motion.div>
-                                <div className="space-y-2">
-                                    <h3 className="text-lg font-semibold">Create Amazing Images</h3>
-                                    <p className="text-sm text-muted-foreground">
-                                        Enter a detailed description to generate unique images
-                                    </p>
-                                </div>
+                                <h3 className="text-lg font-semibold">Create Amazing Images</h3>
+                                <p className="text-sm text-muted-foreground">
+                                    Enter a description to generate unique images
+                                </p>
                             </div>
                         </motion.div>
                     ) }
                 </AnimatePresence>
             </div>
-
-            <form onSubmit={ handleGenerateImage } className="p-4 border-t">
-                <div className="flex gap-2">
-                    <Input
-                        value={ prompt }
-                        onChange={ (e) => setPrompt(e.target.value) }
-                        placeholder="Describe the image you want to generate..."
-                        className="flex-1"
-                        disabled={ loading }
-                    />
-                    <Button type="submit" disabled={ loading || !prompt.trim() }>
-                        { loading ? (
-                            <>
-                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                Generating
-                            </>
-                        ) : (
-                            <>
-                                <SendIcon className="w-4 h-4 mr-2" />
-                                Generate
-                            </>
-                        ) }
-                    </Button>
-                </div>
-            </form>
+            <ImageInputForm
+                onGenerateImage={ handleGenerateImage }
+                loading={ loadingImages.size > 0 }
+                prompt={ prompt }
+                setPrompt={ setPrompt }
+            />
         </ServiceContainer>
     );
 };
