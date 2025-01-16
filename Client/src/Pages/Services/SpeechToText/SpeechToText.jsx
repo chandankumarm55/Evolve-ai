@@ -92,10 +92,10 @@ const SpeechToText = () => {
     const [recognition, setRecognition] = useState(null);
     const [selectedLanguage, setSelectedLanguage] = useState('en-US');
     const [isCopied, setIsCopied] = useState(false);
+    const [interimTranscript, setInterimTranscript] = useState('');
     const { theme } = useTheme();
     const isDark = theme === 'dark';
 
-    // Enhanced language list with more Indian languages
     const languages = [
         { code: 'en-US', name: 'English (US)' },
         { code: 'en-GB', name: 'English (UK)' },
@@ -128,23 +128,35 @@ const SpeechToText = () => {
             };
 
             recognition.onend = () => {
-                setIsListening(false);
+                if (isListening) {
+                    recognition.start();
+                } else {
+                    setIsListening(false);
+                }
             };
 
             recognition.onresult = (event) => {
-                let interimTranscript = '';
+                let currentInterimTranscript = '';
                 let finalTranscript = '';
 
                 for (let i = event.resultIndex; i < event.results.length; i++) {
-                    const transcript = event.results[i][0].transcript;
+                    const transcriptText = event.results[i][0].transcript;
                     if (event.results[i].isFinal) {
-                        finalTranscript += transcript + ' ';
+                        finalTranscript = transcriptText;
                     } else {
-                        interimTranscript += transcript;
+                        currentInterimTranscript = transcriptText;
                     }
                 }
 
-                setTranscript(finalTranscript + interimTranscript);
+                if (finalTranscript) {
+                    setTranscript(prev => {
+                        const newTranscript = prev ? `${prev} ${finalTranscript}` : finalTranscript;
+                        return newTranscript.trim();
+                    });
+                    setInterimTranscript('');
+                } else {
+                    setInterimTranscript(currentInterimTranscript);
+                }
             };
 
             recognition.onerror = (event) => {
@@ -160,19 +172,21 @@ const SpeechToText = () => {
                 recognition.stop();
             }
         };
-    }, []);
+    }, [isListening]);
 
     const startListening = useCallback(() => {
         if (recognition) {
             recognition.lang = selectedLanguage;
-            recognition.start();
             setTranscript('');
+            setInterimTranscript('');
+            recognition.start();
         }
     }, [recognition, selectedLanguage]);
 
     const stopListening = useCallback(() => {
         if (recognition) {
             recognition.stop();
+            setIsListening(false);
         }
     }, [recognition]);
 
@@ -208,13 +222,14 @@ const SpeechToText = () => {
         );
     }
 
+    const displayText = transcript + (interimTranscript ? ' ' + interimTranscript : '');
+
     return (
-        <ServiceContainer >
+        <ServiceContainer>
             <div className="flex-1 overflow-y-auto space-y-2">
                 <Card className={ `p-2 ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
                     }` }>
                     <div className="mb-6">
-
                         <p className={ `text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'
                             }` }>
                             Speak clearly into your microphone to convert speech to text.
@@ -229,7 +244,7 @@ const SpeechToText = () => {
                     />
 
                     <TranscriptCard
-                        text={ transcript }
+                        text={ displayText }
                         isListening={ isListening }
                     />
 

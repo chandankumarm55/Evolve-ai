@@ -19,41 +19,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../components/ui
 import { Slider } from "../../../components/ui/slider";
 import { Alert, AlertDescription } from "../../../components/ui/alert";
 import { QRCodeCanvas } from 'qrcode.react';
+import StyleCustomization from './StyleCustomization'
+import QRDisplay from './QRDisplay'
 
-// QR Code Display Component
-const QRDisplay = ({ value, options, logoUrl }) => {
-    if (!value) {
-        return (
-            <div className="flex flex-col items-center text-muted-foreground p-8">
-                <AlertCircle className="w-12 h-12 mb-2" />
-                <p>Enter content to generate QR code</p>
-            </div>
-        );
-    }
 
-    return (
-        <QRCodeCanvas
-            value={ value }
-            size={ options.size }
-            level={ options.errorCorrection }
-            fgColor={ options.fgColor }
-            bgColor={ options.bgColor }
-            imageSettings={
-                logoUrl
-                    ? {
-                        src: logoUrl,
-                        width: options.size * 0.2,
-                        height: options.size * 0.2,
-                        excavate: true,
-                    }
-                    : undefined
-            }
-            className="w-full max-w-full h-auto"
-        />
-    );
-};
-
-// Image Upload Component
 const ImageUpload = ({ onImageUpload }) => {
     const handleFileChange = (e) => {
         const file = e.target.files?.[0];
@@ -84,61 +53,6 @@ const ImageUpload = ({ onImageUpload }) => {
     );
 };
 
-// Style Customization Component
-const StyleCustomization = ({ options, setOptions }) => {
-    return (
-        <div className="space-y-6">
-            <div className="space-y-2">
-                <Label>QR Code Size</Label>
-                <Slider
-                    min={ 128 }
-                    max={ 512 }
-                    step={ 32 }
-                    value={ [options.size] }
-                    onValueChange={ ([size]) => setOptions({ ...options, size }) }
-                    className="w-full"
-                />
-                <div className="text-sm text-muted-foreground">{ options.size }px</div>
-            </div>
-
-            <div className="space-y-2">
-                <Label>Error Correction Level</Label>
-                <div className="flex gap-2">
-                    { ['L', 'M', 'Q', 'H'].map((level) => (
-                        <Button
-                            key={ level }
-                            variant={ options.errorCorrection === level ? "default" : "outline" }
-                            onClick={ () => setOptions({ ...options, errorCorrection: level }) }
-                            className="flex-1"
-                        >
-                            { level }
-                        </Button>
-                    )) }
-                </div>
-            </div>
-
-            <div className="space-y-2">
-                <Label>QR Code Color</Label>
-                <Input
-                    type="color"
-                    value={ options.fgColor }
-                    onChange={ (e) => setOptions({ ...options, fgColor: e.target.value }) }
-                    className="h-10 w-full"
-                />
-            </div>
-
-            <div className="space-y-2">
-                <Label>Background Color</Label>
-                <Input
-                    type="color"
-                    value={ options.bgColor }
-                    onChange={ (e) => setOptions({ ...options, bgColor: e.target.value }) }
-                    className="h-10 w-full"
-                />
-            </div>
-        </div>
-    );
-};
 
 // Main Component
 const QRCodeGenerator = () => {

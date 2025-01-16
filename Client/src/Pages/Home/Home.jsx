@@ -1,17 +1,15 @@
-
-
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Bot, Sparkles, MessageSquare, Image, Mic } from 'lucide-react';
-import { ThemeToggle } from '../components/ui/ThemeToggle';
-import { useTheme } from '../contexts/ThemeContext';
-import PromptComponent from '../components/FunctionalComponents/PromptComponent';
-import Testimonials from '../components/FunctionalComponents/Testiminials';
-import { Button } from '../components/ui/button'
-import Header from '../components/FunctionalComponents/Header';
-import Footer from '../components/FunctionalComponents/Footer';
-import HeroSection from '../components/FunctionalComponents/HeroSection';
+import { ThemeToggle } from '../../components/ui/ThemeToggle';
+import { useTheme } from '../../contexts/ThemeContext';
+import PromptComponent from '../../components/FunctionalComponents/PromptComponent';
+import Testimonials from '../../components/FunctionalComponents/Testiminials';
+import { Button } from '../../components/ui/button'
+import Header from '../../components/FunctionalComponents/Header';
+import Footer from '../../components/FunctionalComponents/Footer';
+import HeroSection from '../../components/FunctionalComponents/HeroSection';
 
 const features = [
     {

@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ClerkProvider } from '@clerk/clerk-react';
 import { ThemeProvider } from './contexts/ThemeContext';
 import LandingPage from './Pages/LandingPage';
-import Home from './Pages/Home';
+import Home from './Pages/Home/Home';
 import DashboardLayout from './components/ClearkComponents/DashboardLayout';
 import RootLayout from './components/ClearkComponents/RootLayout';
 import { NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY } from './components/ClearkComponents/Constant';

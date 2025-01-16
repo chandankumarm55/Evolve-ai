@@ -14,7 +14,7 @@ const ImageProcessor = ({ imageUrl, onProcessed }) => {
     useEffect(() => {
         const processImage = async () => {
             const img = new Image();
-            img.crossOrigin = "anonymous"; // Enable CORS
+            img.crossOrigin = "anonymous";
 
             img.onload = () => {
                 const canvas = canvasRef.current;
