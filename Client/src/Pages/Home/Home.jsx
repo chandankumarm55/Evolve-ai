@@ -10,7 +10,7 @@ import { Button } from '../../components/ui/button'
 import Header from '../../components/FunctionalComponents/Header';
 import Footer from '../../components/FunctionalComponents/Footer';
 import HeroSection from '../../components/FunctionalComponents/HeroSection';
-
+import Description from './Description'
 const features = [
     {
         icon: 'MessageSquare',
@@ -34,9 +34,9 @@ const Home = () => {
     const isDark = theme === 'dark';
 
     return (
-        <div className={ `min-h-screen ${isDark ? 'bg-gray-900' : 'bg-gray-50'}` }>
+        <div className={ `min-h-screen ${isDark ? 'bg-black' : 'bg-gray-50'}` }>
             {/* Header */ }
-            <header className={ `${isDark ? 'bg-gray-900' : 'bg-white'} border-b ${isDark ? 'border-gray-800' : 'border-gray-200'}` }>
+            <header className={ `${isDark ? 'bg-zinc-900' : 'bg-white'} border-b ${isDark ? 'border-gray-800' : 'border-gray-200'}` }>
                 <Header />
             </header>
 
@@ -45,8 +45,9 @@ const Home = () => {
                 <HeroSection />
             </section>
 
+            <Description />
 
-            <section className={ `py-20 ${isDark ? 'bg-gray-800' : 'bg-white'}` }>
+            <section className={ `py-20 ${isDark ? 'bg-black' : 'bg-white'}` }>
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <motion.div initial={ { opacity: 0, y: 20 } } whileInView={ { opacity: 1, y: 0 } } viewport={ { once: true } } className="text-center mb-16">
                         <h2 className={ `text-4xl font-bold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}` }>Powerful Features</h2>
@@ -65,12 +66,12 @@ const Home = () => {
             </section>
 
 
-            <section className={ `py-20 ${isDark ? 'bg-gray-900' : 'bg-gray-50'}` }>
+            <section className={ `py-20 ${isDark ? 'bg-zinc-900' : 'bg-gray-50'}` }>
                 <Testimonials />
             </section>
 
             {/* Footer */ }
-            <footer className="bg-gray-900 text-white py-12">
+            <footer className="bg-zinc-900 text-white py-12">
                 <Footer />
             </footer>
         </div>
@@ -78,4 +79,3 @@ const Home = () => {
 };
 
 export default Home;
-

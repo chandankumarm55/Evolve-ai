@@ -2,7 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ClerkProvider } from '@clerk/clerk-react';
 import { ThemeProvider } from './contexts/ThemeContext';
-import LandingPage from './Pages/LandingPage';
+import LandingPage from './Pages/LandingPage/LandingPage';
 import Home from './Pages/Home/Home';
 import DashboardLayout from './components/ClearkComponents/DashboardLayout';
 import RootLayout from './components/ClearkComponents/RootLayout';
@@ -20,6 +20,7 @@ import DashboardIndex from './Pages/Services/DashboardIndex';
 import SpeechToText from './Pages/Services/SpeechToText/SpeechToText';
 import QRCodeGenerator from './Pages/Services/QRCodeGenerator/QRCodeGenerator';
 import { Toaster } from "./components/ui/toaster";
+import Pricing from './Pages/Pricing/Pricing';
 
 // Clerk Publishable Key
 const PUBLISHABLE_KEY = NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
@@ -39,7 +40,7 @@ function App() {
               <Route path="/" element={ <LandingPage /> } />
               <Route path='/sign-up/*' element={ <SignUp /> } />
               <Route element={ <RootLayout /> }>
-
+                <Route element={ <Pricing /> } path='/pricing' />
                 <Route path="/Evolve" element={ <Home /> } />
               </Route>
 

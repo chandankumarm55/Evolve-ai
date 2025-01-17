@@ -10,9 +10,11 @@ const SparkleIcon = () => (
 export default function PromptComponent() {
     const { theme } = useTheme();
     const isDark = theme === 'dark';
-    const [prompt, setPrompt] = useState('');
+    const [userInput, setUserInput] = useState('');
+    const [placeholder, setPlaceholder] = useState('');
     const [index, setIndex] = useState(0);
     const [typingIndex, setTypingIndex] = useState(0);
+    const [isTyping, setIsTyping] = useState(false);
 
     const prompts = [
         'Deep sea exhibit with sparkling jellyfish and coral.',
@@ -21,13 +23,15 @@ export default function PromptComponent() {
     ];
 
     useEffect(() => {
+        if (userInput || isTyping) return;
+
         const typingTimeout = setTimeout(() => {
             if (typingIndex < prompts[index].length) {
-                setPrompt(prev => prev + prompts[index][typingIndex]);
+                setPlaceholder(prev => prev + prompts[index][typingIndex]);
                 setTypingIndex(prev => prev + 1);
             } else {
                 setTimeout(() => {
-                    setPrompt('');
+                    setPlaceholder('');
                     setTypingIndex(0);
                     setIndex(prev => (prev + 1) % prompts.length);
                 }, 2000);
@@ -35,42 +39,80 @@ export default function PromptComponent() {
         }, 100);
 
         return () => clearTimeout(typingTimeout);
-    }, [typingIndex, index]);
+    }, [typingIndex, index, userInput, isTyping]);
+
+    const handleInputFocus = () => {
+        setIsTyping(true);
+        setPlaceholder('');
+    };
+
+    const handleInputBlur = () => {
+        if (!userInput) {
+            setIsTyping(false);
+            setTypingIndex(0);
+            setPlaceholder('');
+        }
+    };
+
+    const handleSubmit = () => {
+        if (userInput.trim()) {
+            console.log('Generating for prompt:', userInput);
+            // Add your generation logic here
+        }
+    };
+
+    const handleKeyPress = (e) => {
+        if (e.key === 'Enter') {
+            handleSubmit();
+        }
+    };
 
     return (
         <div className={ `
             flex items-center w-full max-w-3xl mx-auto
             p-2 sm:p-3 rounded-full border
-            ${isDark ? 'bg-[#1D1E2F] border-gray-700' : 'bg-gray-100 border-gray-200'}
+            ${isDark
+                ? 'bg-[#1D1E2F] border-gray-700'
+                : 'bg-gray-100 border-gray-200'
+            }
         `}>
             <div className="flex items-center flex-1 gap-3 min-w-0">
-                <span className="shrink-0">
+                <span className={ `shrink-0 ${isDark ? 'text-gray-300' : 'text-gray-600'}` }>
                     <SparkleIcon />
                 </span>
                 <input
                     type="text"
-                    value={ prompt }
-                    readOnly
-                    placeholder="Enter your prompt..."
+                    value={ userInput }
+                    onChange={ (e) => setUserInput(e.target.value) }
+                    onFocus={ handleInputFocus }
+                    onBlur={ handleInputBlur }
+                    onKeyPress={ handleKeyPress }
+                    placeholder={ isTyping ? "Enter your prompt..." : placeholder || "Enter your prompt..." }
                     className={ `
                         w-full bg-transparent text-sm sm:text-base truncate
-                        ${isDark ? 'text-gray-200 placeholder-gray-500' : 'text-gray-800 placeholder-gray-400'}
                         outline-none border-none
+                        ${isDark
+                            ? 'text-gray-200 placeholder-gray-500'
+                            : 'text-gray-800 placeholder-gray-400'
+                        }
                     `}
                 />
             </div>
-            <button className={ `
-                ml-2 px-3 sm:px-4 py-1.5 sm:py-2 whitespace-nowrap text-sm sm:text-base
-                ${isDark
-                    ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white'
-                    : 'bg-gradient-to-r from-blue-500 to-purple-500 text-white'
-                }
-                rounded-full font-medium hover:opacity-90 transition-opacity 
-                flex items-center gap-2
-            `}>
+            <button
+                onClick={ handleSubmit }
+                className={ `
+                    ml-2 px-3 sm:px-4 py-1.5 sm:py-2 whitespace-nowrap text-sm sm:text-base
+                    rounded-full font-medium hover:opacity-90 transition-opacity
+                    flex items-center gap-2 text-white
+                    ${isDark
+                        ? 'bg-gradient-to-r from-blue-600 to-purple-600'
+                        : 'bg-gradient-to-r from-blue-500 to-purple-500'
+                    }
+                `}
+            >
                 Generate
                 <span className="hidden sm:inline">→</span>
             </button>
         </div>
     );
-};
+}
