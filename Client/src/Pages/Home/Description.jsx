@@ -1,63 +1,78 @@
-import React, { useEffect } from 'react';
+import React from 'react';
+import { motion } from 'framer-motion';
 import { useTheme } from '../../contexts/ThemeContext';
 
 const Description = () => {
     const { theme } = useTheme();
     const isDark = theme === 'dark';
 
-    useEffect(() => {
-        // Add smooth scroll behavior
-        document.documentElement.style.scrollBehavior = 'smooth';
+    const containerVariants = {
+        hidden: { opacity: 0 },
+        visible: {
+            opacity: 1,
+            transition: {
+                staggerChildren: 0.3
+            }
+        }
+    };
 
-        // Intersection Observer for fade-in animations
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('show');
-                }
-            });
-        }, {
-            threshold: 0.1
-        });
+    const textVariants = {
+        hidden: {
+            opacity: 0,
+            y: 50
+        },
+        visible: {
+            opacity: 1,
+            y: 0,
+            transition: {
+                duration: 0.8,
+                ease: "easeOut"
+            }
+        }
+    };
 
-        // Observe animated elements
-        document.querySelectorAll('.animate-on-scroll').forEach((el) => observer.observe(el));
-
-        return () => observer.disconnect();
-    }, []);
+    const heroTexts = [
+        "WHY SETTLE FOR",
+        "ORDINARY WHEN",
+        "YOU CAN EVOLVE?"
+    ];
 
     return (
-        <div className={ `min-h-screen flex flex-col lg:flex-row items-center justify-center p-6 lg:p-16 gap-5 lg:gap-16 
-            ${isDark ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}
-            transition-colors duration-500 ease-in-out`}>
+        <motion.div
+            initial="hidden"
+            animate="visible"
+            variants={ containerVariants }
+            className={ `
+                min-h-screen h-screen
+                flex flex-col lg:flex-row
+                items-center justify-center
+                mt-2
+                lg:pt-16 sm:pt-10
+                ${isDark ? 'bg-black text-white' : 'bg-white text-black'}
+                transition-colors duration-500 ease-in-out
+            `}
+        >
 
-            {/* Left side - Big Text */ }
-            <div className="w-full lg:w-1/2 space-y-4 animate-on-scroll opacity-0 translate-y-10 
-                transition-all duration-1000 ease-out">
-                { ['WHY SETTLE FOR', 'ORDINARY WHEN', 'YOU CAN EVOVLE?'].map((text, index) => (
-                    <h1 key={ index }
-                        className="text-4xl md:text-5xl lg:text-7xl font-black 
-                        tracking-tight leading-tight
-                        hover:scale-105 transition-transform duration-300
-                        ">
-                        { text }
-                    </h1>
+            <div className="relative w-full lg:w-2/3 space-y-4 lg:space-y-8">
+                { heroTexts.map((text, index) => (
+                    <motion.div
+                        key={ index }
+                        variants={ textVariants }
+                        className="overflow-hidden"
+                        whileHover={ { scale: 1.05 } }
+                        whileTap={ { scale: 0.95 } }
+                    >
+                        <h1 className={ `
+                            text-5xl md:text-6xl lg:text-8xl xl:text-9xl
+                            font-black tracking-tight leading-none
+                            ${isDark ? 'text-white' : 'text-black'}
+                        `}>
+                            { text }
+                        </h1>
+                    </motion.div>
                 )) }
             </div>
-
-
-
-            <style jsx>{ `
-                .animate-on-scroll {
-                    transform: translateY(40px);
-                    opacity: 0;
-                }
-                .animate-on-scroll.show {
-                    transform: translateY(0);
-                    opacity: 1;
-                }
-            `}</style>
-        </div>
+        </motion.div>
     );
 };
 
