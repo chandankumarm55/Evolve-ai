@@ -10,8 +10,10 @@ import {
 } from 'lucide-react';
 import { useUser } from "@clerk/clerk-react";
 import { useTheme } from '../../contexts/ThemeContext';
+import { useNavigate } from 'react-router-dom';
 
 const DashboardIndex = () => {
+    const navigate = useNavigate()
     const { user } = useUser();
     const { theme } = useTheme();
     const isDark = theme === 'dark';
@@ -80,10 +82,12 @@ const DashboardIndex = () => {
                         <p className="text-2xl font-bold">1,200 / 5,000</p>
                         <p className="text-sm text-gray-500">API calls remaining</p>
                     </div>
-                    <button className={ `px-4 py-2 rounded-lg ${isDark
-                        ? 'bg-purple-600 hover:bg-purple-700'
-                        : 'bg-purple-500 hover:bg-purple-600'
-                        } text-white transition-colors` }>
+                    <button
+                        onClick={ () => navigate('/pricing') }
+                        className={ `px-4 py-2 rounded-lg ${isDark
+                            ? 'bg-purple-600 hover:bg-purple-700'
+                            : 'bg-purple-500 hover:bg-purple-600'
+                            } text-white transition-colors` }>
                         Upgrade Plan
                     </button>
                 </div>

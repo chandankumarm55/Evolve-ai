@@ -8,7 +8,7 @@ import DashboardLayout from './components/ClearkComponents/DashboardLayout';
 import RootLayout from './components/ClearkComponents/RootLayout';
 import { NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY } from './components/ClearkComponents/Constant';
 import './App.css';
-import SignUp from './Pages/SingUp';
+import SignUp from './Pages/Auth/SingUp';
 import Conversation from './Pages/Services/Conversation/Conversation';
 import { Dashboard } from './components/Layouts/Dashboard';
 import { ImageGeneration } from './Pages/Services/ImageGeneration/ImageGeneration';
@@ -21,6 +21,7 @@ import SpeechToText from './Pages/Services/SpeechToText/SpeechToText';
 import QRCodeGenerator from './Pages/Services/QRCodeGenerator/QRCodeGenerator';
 import { Toaster } from "./components/ui/toaster";
 import Pricing from './Pages/Pricing/Pricing';
+import SignIn from './Pages/Auth/SingIn';
 
 // Clerk Publishable Key
 const PUBLISHABLE_KEY = NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
@@ -39,6 +40,7 @@ function App() {
             <Routes>
               <Route path="/" element={ <LandingPage /> } />
               <Route path='/sign-up/*' element={ <SignUp /> } />
+              <Route path='/sign-in/*' element={ <SignIn /> } />
               <Route element={ <RootLayout /> }>
                 <Route element={ <Pricing /> } path='/pricing' />
                 <Route path="/Evolve" element={ <Home /> } />

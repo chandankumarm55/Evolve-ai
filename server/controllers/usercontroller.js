@@ -3,9 +3,8 @@ import User from '../models/usermodel.js';
 // login and creating the user in backend
 export const Login = async(req, res) => {
     try {
-        const { clerkId, firstName, lastName, email, profileImageUrl } = req.body;
-
-
+        const { clerkId, firstName, lastName, email } = req.body;
+        console.log('User data:', req.body);
         if (!clerkId) {
             return res.status(400).json({ message: 'ClerkID is required. Please login.' });
         }
@@ -23,7 +22,7 @@ export const Login = async(req, res) => {
             firstName,
             lastName,
             email,
-            profileImageUrl
+
         });
 
         return res.status(201).json({ message: 'User created successfully', user });

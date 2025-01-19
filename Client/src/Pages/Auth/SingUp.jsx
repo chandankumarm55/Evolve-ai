@@ -1,6 +1,6 @@
 import React from 'react';
 import { SignUp } from "@clerk/clerk-react";
-import { useTheme } from '../contexts/ThemeContext';
+import { useTheme } from '../../contexts/ThemeContext';
 
 const SignUpPage = () => {
     const { theme } = useTheme();
@@ -16,6 +16,7 @@ const SignUpPage = () => {
                     }` }>
                     <SignUp
                         path="/sign-up"
+                        signInUrl="/sign-in"
                         afterSignUpUrl="/dashboard" // Redirect to /dashboard after sign-up
                         appearance={ {
                             elements: {

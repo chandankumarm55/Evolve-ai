@@ -11,6 +11,8 @@ import Header from '../../components/FunctionalComponents/Header';
 import Footer from '../../components/FunctionalComponents/Footer';
 import HeroSection from '../../components/FunctionalComponents/HeroSection';
 import Description from './Description'
+import LaptopFrame from './LaptopFrame';
+import Features from './Features';
 const features = [
     {
         icon: 'MessageSquare',
@@ -47,26 +49,14 @@ const Home = () => {
 
             <Description />
 
+
+
             <section className={ `py-20 ${isDark ? 'bg-black' : 'bg-white'}` }>
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <motion.div initial={ { opacity: 0, y: 20 } } whileInView={ { opacity: 1, y: 0 } } viewport={ { once: true } } className="text-center mb-16">
-                        <h2 className={ `text-4xl font-bold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}` }>Powerful Features</h2>
-                        <p className={ isDark ? 'text-gray-300' : 'text-gray-600' }>Discover what makes Evolve AI special</p>
-                    </motion.div>
-                    <div className="grid md:grid-cols-3 gap-8">
-                        { features.map((feature, index) => (
-                            <motion.div key={ feature.title } initial={ { opacity: 0, y: 20 } } whileInView={ { opacity: 1, y: 0 } } viewport={ { once: true } } transition={ { delay: index * 0.2 } } className={ `p-6 rounded-xl ${isDark ? 'bg-gray-700' : 'bg-gray-50'}` }>
-                                <div className="w-12 h-12 text-purple-600 mb-4">{ feature.icon }</div>
-                                <h3 className={ `text-xl font-semibold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}` }>{ feature.title }</h3>
-                                <p className={ isDark ? 'text-gray-300' : 'text-gray-600' }>{ feature.description }</p>
-                            </motion.div>
-                        )) }
-                    </div>
-                </div>
+                <Features />
             </section>
 
-
-            <section className={ `py-20 ${isDark ? 'bg-zinc-900' : 'bg-gray-50'}` }>
+            <LaptopFrame />
+            <section className={ `py-20 ${isDark ? 'bg-black' : 'bg-white'}` }>
                 <Testimonials />
             </section>
 
