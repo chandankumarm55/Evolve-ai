@@ -3,15 +3,11 @@ import User from '../models/usermodel.js';
 // login and creating the user in backend
 export const Login = async(req, res) => {
     try {
-        const { clerkId, firstName, lastName, email } = req.body;
+        const { clerkId } = req.body;
         console.log('User data:', req.body);
         if (!clerkId) {
             return res.status(400).json({ message: 'ClerkID is required. Please login.' });
         }
-        if (!email) {
-            return res.status(400).json({ message: 'Email is required. Please login.' });
-        }
-
         const existingUser = await User.findOne({ clerkId });
 
         if (existingUser) {
@@ -19,9 +15,6 @@ export const Login = async(req, res) => {
         }
         const user = await User.create({
             clerkId,
-            firstName,
-            lastName,
-            email,
 
         });
 

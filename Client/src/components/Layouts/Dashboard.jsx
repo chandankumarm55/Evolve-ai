@@ -1,24 +1,68 @@
-import { useState } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
-import { Menu } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
-import { ThemeToggle } from '../ui/ThemeToggle';
-import { useTheme } from '../../contexts/ThemeContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { UserButton } from '@clerk/clerk-react';
+import { useTheme } from '../../contexts/ThemeContext';
+import DashboardHeader from './DashboardHeader';
+import { useAuth } from "@clerk/clerk-react"; // Add this import
 
 export const Dashboard = () => {
     const currentPath = useLocation().pathname;
     const { theme } = useTheme();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
-    const setTitle = (url) => {
-        const parts = url.split('/');
-        return parts[parts.length - 1].charAt(0).toUpperCase() +
-            parts[parts.length - 1].slice(1);
-    }
-
     const isDark = theme === 'dark';
+    const navigate = useNavigate();
+    const { userId: clerkUserId } = useAuth(); // Get clerk user ID
+
+    useEffect(() => {
+        const initializeUser = async () => {
+            try {
+                // First check if clerk user ID exists
+                if (!clerkUserId) {
+                    console.error('No Clerk user ID found');
+                    navigate('/sign-in');
+                    return;
+                }
+
+                // Set clerk ID in localStorage
+                localStorage.setItem('clerkId', clerkUserId);
+
+                // Check if userId already exists in localStorage
+                const existingUserId = localStorage.getItem('userId');
+                if (existingUserId) {
+                    return; // If userId exists, no need to make API call
+                }
+
+                // If no userId, make API call to create/fetch user
+                const response = await fetch('http://localhost:3000/api/user/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ clerkId: clerkUserId }),
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to create/fetch user');
+                }
+
+
+                const data = await response.json();
+
+                if (data.user && data.user._id) {
+                    localStorage.setItem('userId', data.user._id);
+                } else {
+                    throw new Error('No user ID received from server');
+                }
+            } catch (error) {
+                console.error('Error in user initialization:', error);
+                alert(error.message);
+                navigate('/login');
+            }
+        };
+
+        initializeUser();
+    }, [clerkUserId, navigate]); // Dependencies added
 
     return (
         <div className="flex h-screen">
@@ -55,37 +99,7 @@ export const Dashboard = () => {
             </div>
 
             <main className={ `flex-1 ${isDark ? 'bg-gray-800 text-gray-200' : 'bg-white text-gray-900'} overflow-hidden` }>
-                <header className={ `h-16 ${isDark ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-white'} border-b shadow-sm` }>
-                    <div className="h-full px-4 flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                            <button
-                                onClick={ () => setIsSidebarOpen(true) }
-                                className={ `p-2 rounded-lg lg:hidden hover:bg-opacity-10 hover:bg-gray-900
-                                    ${isDark ? 'hover:bg-gray-700' : 'hover:bg-gray-200'}` }
-                            >
-                                <Menu className="w-6 h-6" />
-                            </button>
-                            <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight">
-                                { setTitle(currentPath) } AI
-                            </h1>
-                        </div>
-
-                        {/* Right section with theme toggle and user button */ }
-                        <div className="flex items-center gap-4">
-                            <ThemeToggle />
-                            <UserButton
-                                afterSignOutUrl="/sign-in"
-                                appearance={ {
-                                    elements: {
-                                        avatarBox: "w-8 h-8"
-                                    }
-                                } }
-                            />
-                        </div>
-                    </div>
-                </header>
-
-                {/* Main content */ }
+                <DashboardHeader setIsSidebarOpen={ setIsSidebarOpen } currentPath={ currentPath } />
                 <div className="p-4 h-[calc(100%-4rem)] overflow-auto">
                     <Outlet />
                 </div>
@@ -93,3 +107,5 @@ export const Dashboard = () => {
         </div>
     );
 };
+
+export default Dashboard;

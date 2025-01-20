@@ -1,4 +1,16 @@
+// models/User.js
 import mongoose from "mongoose";
+
+const usageSchema = new mongoose.Schema({
+    date: {
+        type: Date,
+        required: true
+    },
+    transactionCount: {
+        type: Number,
+        default: 0
+    }
+});
 
 const userSchema = new mongoose.Schema({
     clerkId: {
@@ -8,15 +20,9 @@ const userSchema = new mongoose.Schema({
     },
     firstName: {
         type: String,
-        required: true
     },
     lastName: {
         type: String
-    },
-    email: {
-        type: String,
-        required: true,
-        unique: true
     },
     profileImageUrl: {
         type: String
@@ -25,6 +31,16 @@ const userSchema = new mongoose.Schema({
         type: String,
         default: 'Free'
     },
+    subscriptionDetails: {
+        startDate: Date,
+        endDate: Date,
+        status: {
+            type: String,
+            enum: ['active', 'expired', 'cancelled'],
+            default: 'active'
+        }
+    },
+    usage: [usageSchema],
     metrics: {
         conversations: {
             type: Number,

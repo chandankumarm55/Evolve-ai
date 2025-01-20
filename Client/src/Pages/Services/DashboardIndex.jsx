@@ -17,7 +17,7 @@ const DashboardIndex = () => {
     const { user } = useUser();
     const { theme } = useTheme();
     const isDark = theme === 'dark';
-    console.log(user)
+
     const metrics = [
         {
             title: 'Total Conversations',
@@ -55,16 +55,7 @@ const DashboardIndex = () => {
                         Welcome back! Here's an overview of your AI tools usage.
                     </p>
                 </div>
-                <div className="h-12 w-12 rounded-full bg-gray-200 overflow-hidden">
-                    <img
-                        src="/placeholder-avatar.jpg"
-                        alt="User"
-                        className="h-full w-full object-cover"
-                        onError={ (e) => {
-                            e.target.src = 'https://via.placeholder.com/48';
-                        } }
-                    />
-                </div>
+
             </div>
 
             {/* Subscription Status */ }
