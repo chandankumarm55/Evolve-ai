@@ -1,85 +1,56 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ImageIcon, Loader2, Download } from 'lucide-react';
 import { toast } from 'react-toastify';
+import axios from 'axios';
 import { Button } from '../../../components/ui/button';
 import { ServiceContainer } from '../../../components/ui/ServiceContainer';
-import { ImageCard } from './ImageCard';
 import ImageInputForm from './ImageInputForm';
+import EnhancedImageCard from './EnhancedImageCard';
 
-// Separate component for image processing canvas
-const ImageProcessor = ({ imageUrl, onProcessed }) => {
-    const canvasRef = useRef(null);
+const fetchImage = async (prompt) => {
+    try {
+        // First, initiate the image generation
+        const encodedPrompt = encodeURIComponent(prompt);
+        const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}`;
 
-    useEffect(() => {
-        const processImage = async () => {
-            const img = new Image();
-            img.crossOrigin = "anonymous";
+        // Function to check if image is actually generated
+        const checkImage = async () => {
+            try {
+                const response = await axios.get(imageUrl, {
+                    responseType: 'blob',
+                    timeout: 5000 // 5s timeout for each check
+                });
 
-            img.onload = () => {
-                const canvas = canvasRef.current;
-                const ctx = canvas.getContext('2d');
-
-                // Set canvas size to match image dimensions
-                canvas.width = img.width;
-                canvas.height = img.height;
-
-                // Calculate crop height (remove bottom 10% where watermark typically appears)
-                const cropHeight = img.height * 0.9;
-
-                // Draw cropped image
-                ctx.drawImage(img,
-                    0, 0, img.width, cropHeight, // Source rectangle
-                    0, 0, img.width, cropHeight  // Destination rectangle
-                );
-
-                // Get processed image URL
-                const processedUrl = canvas.toDataURL('image/jpeg', 0.9);
-                onProcessed(processedUrl);
-            };
-
-            img.onerror = () => {
-                toast.error('Failed to load image for processing');
-                onProcessed(null);
-            };
-
-            img.src = imageUrl;
+                // If we get a successful response and it's an image
+                if (response.status === 200 && response.data.type.startsWith('image/')) {
+                    return URL.createObjectURL(response.data);
+                }
+                throw new Error('Image not ready');
+            } catch (error) {
+                throw error;
+            }
         };
 
-        processImage();
-    }, [imageUrl, onProcessed]);
+        // Poll until image is ready
+        const poll = async (retries = 0, maxRetries = 20) => { // 20 retries = ~60 seconds
+            if (retries >= maxRetries) {
+                throw new Error('Image generation timed out');
+            }
 
-    return <canvas ref={ canvasRef } style={ { display: 'none' } } />;
-};
+            try {
+                const imageUrl = await checkImage();
+                return imageUrl;
+            } catch (error) {
+                await new Promise(resolve => setTimeout(resolve, 3000)); // Wait 3 seconds between checks
+                return poll(retries + 1, maxRetries);
+            }
+        };
 
-// Enhanced ImageCard component with download functionality
-const EnhancedImageCard = ({ image, onDownload }) => {
-    return (
-        <motion.div
-            initial={ { opacity: 0 } }
-            animate={ { opacity: 1 } }
-            exit={ { opacity: 0 } }
-            className="relative rounded-lg overflow-hidden"
-        >
-            <img
-                src={ image.processedUrl || image.url }
-                alt={ image.prompt }
-                className="w-full aspect-square object-cover"
-            />
-            <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/50 to-transparent">
-                <p className="text-white text-sm mb-2">{ image.prompt }</p>
-                <Button
-                    size="sm"
-                    variant="outline"
-                    className="bg-white/90 hover:bg-white"
-                    onClick={ () => onDownload(image) }
-                >
-                    <Download className="w-4 h-4 mr-2" />
-                    Download
-                </Button>
-            </div>
-        </motion.div>
-    );
+        return await poll();
+    } catch (error) {
+        throw new Error('Failed to generate image: ' + error.message);
+    }
 };
 
 export const ImageGeneration = () => {
@@ -87,61 +58,38 @@ export const ImageGeneration = () => {
     const [loadingImages, setLoadingImages] = useState(new Map());
     const [prompt, setPrompt] = useState('');
 
-    const handleImageProcessed = (originalUrl, processedUrl) => {
-        if (processedUrl) {
-            setImages(prev => prev.map(img =>
-                img.url === originalUrl
-                    ? { ...img, processedUrl }
-                    : img
-            ));
-        }
-    };
-
     const handleDownload = (image) => {
         const link = document.createElement('a');
-        link.href = image.processedUrl || image.url;
+        link.href = image.url;
         link.download = `generated-image-${Date.now()}.jpg`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
     };
 
-    const checkImageLoaded = async (imageUrl, promptText, timeoutId) => {
-        try {
-            const response = await fetch(imageUrl, { method: 'HEAD' });
-            if (response.ok) {
-                setLoadingImages(prev => {
-                    const newMap = new Map(prev);
-                    newMap.delete(promptText);
-                    return newMap;
-                });
-                setImages(prev => [{
-                    url: imageUrl,
-                    prompt: promptText,
-                }, ...prev]);
-                clearTimeout(timeoutId);
-            } else {
-                setTimeout(() => checkImageLoaded(imageUrl, promptText, timeoutId), 1000);
-            }
-        } catch (error) {
-            setTimeout(() => checkImageLoaded(imageUrl, promptText, timeoutId), 1000);
-        }
-    };
-
     const handleGenerateImage = async (inputPrompt) => {
+        // Add to loading state
         setLoadingImages(prev => new Map(prev).set(inputPrompt, true));
 
-        const timeoutId = setTimeout(() => {
+        try {
+            const imageUrl = await fetchImage(inputPrompt);
+
+            // Add new image to the list
+            setImages(prev => [{
+                url: imageUrl,
+                prompt: inputPrompt,
+            }, ...prev]);
+
+        } catch (error) {
+            toast.error(error.message);
+        } finally {
+            // Remove from loading state
             setLoadingImages(prev => {
                 const newMap = new Map(prev);
                 newMap.delete(inputPrompt);
                 return newMap;
             });
-            toast.error('Image generation timed out. Please try again.');
-        }, 10000);
-
-        const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(inputPrompt)}`;
-        checkImageLoaded(imageUrl, inputPrompt, timeoutId);
+        }
     };
 
     return (
@@ -154,22 +102,13 @@ export const ImageGeneration = () => {
                             initial={ { opacity: 0 } }
                             animate={ { opacity: 1 } }
                         >
-                            {/* Process images as they're loaded */ }
+                            {/* Display generated images */ }
                             { images.map((image) => (
-                                <div key={ image.url }>
-                                    { !image.processedUrl && (
-                                        <ImageProcessor
-                                            imageUrl={ image.url }
-                                            onProcessed={ (processedUrl) =>
-                                                handleImageProcessed(image.url, processedUrl)
-                                            }
-                                        />
-                                    ) }
-                                    <EnhancedImageCard
-                                        image={ image }
-                                        onDownload={ handleDownload }
-                                    />
-                                </div>
+                                <EnhancedImageCard
+                                    key={ image.url }
+                                    image={ image }
+                                    onDownload={ handleDownload }
+                                />
                             )) }
 
                             {/* Loading states */ }

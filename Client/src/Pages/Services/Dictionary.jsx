@@ -1,52 +1,55 @@
 import { useState } from 'react';
+import axios from 'axios';
 import { ServiceContainer } from '../../components/ui/ServiceContainer';
 import { InputBox } from '../../components/ui/InputBox';
 import { motion } from 'framer-motion';
 import { BookOpen } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
+import { toast, Toaster } from 'sonner';
 
 export const Dictionary = () => {
   const [searchHistory, setSearchHistory] = useState([]);
   const { theme } = useTheme();
   const isDark = theme === 'dark';
 
+  const handleSearch = async (word) => {
+    try {
+      const response = await axios.get(
+        `https://api.dictionaryapi.dev/api/v2/entries/en_US/${word}`
+      );
 
+      const fetchedDefinition = {
+        word: response.data[0].word,
+        phonetic: response.data[0].phonetic || '/not found/',
+        meanings: response.data[0].meanings.map(meaning => ({
+          partOfSpeech: meaning.partOfSpeech,
+          definitions: meaning.definitions.map(def => def.definition),
+          synonyms: meaning.synonyms || [],
+          antonyms: meaning.antonyms || []
+        })),
+        timestamp: new Date().toLocaleTimeString()
+      };
 
-  const handleSearch = (word) => {
-    // Simulate dictionary lookup
-    const mockDefinition = {
-      word,
-      phonetic: '/ˈsæmpəl/',
-      meanings: [
-        {
-          partOfSpeech: 'noun',
-          definitions: ['A representative part of a whole'],
-          synonyms: ['example', 'specimen'],
-          antonyms: [],
-        },
-      ],
-      timestamp: new Date().toLocaleTimeString(),
-    };
-
-    setSearchHistory((prev) => [mockDefinition, ...prev]);
+      setSearchHistory((prev) => [fetchedDefinition, ...prev]);
+    } catch (error) {
+      toast.error('Word not found');
+      console.error(error);
+    }
   };
 
   return (
     <ServiceContainer title="AI Dictionary">
+      <Toaster />
       <div className="flex-1 overflow-y-auto space-y-4 mb-4">
         { searchHistory.map((entry, index) => (
           <motion.div
             key={ `${entry.word}-${index}` }
             initial={ { opacity: 0, y: 20 } }
             animate={ { opacity: 1, y: 0 } }
-            className={ `p-6 rounded-lg ${isDark ? 'bg-gray-700' : 'bg-white'
-              } shadow-sm` }
+            className={ `p-6 rounded-lg ${isDark ? 'bg-gray-700' : 'bg-white'} shadow-sm` }
           >
             <div className="flex items-baseline justify-between mb-2">
-              <h3
-                className={ `text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'
-                  }` }
-              >
+              <h3 className={ `text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}` }>
                 { entry.word }
               </h3>
               { entry.phonetic && (
@@ -58,28 +61,19 @@ export const Dictionary = () => {
 
             { entry.meanings.map((meaning, idx) => (
               <div key={ idx } className="mt-4">
-                <div
-                  className={ `text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-600'
-                    }` }
-                >
+                <div className={ `text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-600'}` }>
                   { meaning.partOfSpeech }
                 </div>
                 <ul className="list-disc list-inside space-y-2">
                   { meaning.definitions.map((def, defIdx) => (
-                    <li
-                      key={ defIdx }
-                      className={ isDark ? 'text-gray-300' : 'text-gray-700' }
-                    >
+                    <li key={ defIdx } className={ isDark ? 'text-gray-300' : 'text-gray-700' }>
                       { def }
                     </li>
                   )) }
                 </ul>
                 { meaning.synonyms && meaning.synonyms.length > 0 && (
                   <div className="mt-2">
-                    <span
-                      className={ `text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'
-                        }` }
-                    >
+                    <span className={ `text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}` }>
                       Synonyms:{ ' ' }
                     </span>
                     <span className="text-purple-500">
@@ -92,6 +86,7 @@ export const Dictionary = () => {
             <div className="mt-4 text-sm text-gray-500">{ entry.timestamp }</div>
           </motion.div>
         )) }
+
         { searchHistory.length === 0 && (
           <div className="h-full flex items-center justify-center text-gray-400">
             <div className="text-center">

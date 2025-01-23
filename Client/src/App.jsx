@@ -14,7 +14,7 @@ import { Dashboard } from './components/Layouts/Dashboard';
 import { ImageGeneration } from './Pages/Services/ImageGeneration/ImageGeneration';
 import { TextToSpeech } from './Pages/Services/TextToSpeech';
 import { JokeGenerator } from './Pages/Services/JokeGenerator';
-import { Translator } from './Pages/Services/Translator';
+import { Translator } from './Pages/Services/LanguageTrasalation/Translator';
 import { Dictionary } from './Pages/Services/Dictionary';
 import DashboardIndex from './Pages/Services/DashboardIndex';
 import SpeechToText from './Pages/Services/SpeechToText/SpeechToText';
@@ -36,7 +36,7 @@ function App() {
       <ThemeProvider>
         <BrowserRouter>
           <div className="app-container">
-            <Toaster />
+
             <Routes>
               <Route path="/" element={ <LandingPage /> } />
               <Route path='/sign-up/*' element={ <SignUp /> } />

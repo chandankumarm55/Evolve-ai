@@ -42,6 +42,7 @@ export const Dashboard = () => {
                     body: JSON.stringify({ clerkId: clerkUserId }),
                 });
 
+
                 if (!response.ok) {
                     throw new Error('Failed to create/fetch user');
                 }

@@ -3,7 +3,8 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import { connectDB } from './middlewares/db.js';
 import userroutes from './routers/userroutes.js';
-
+import usageroutes from './routers/usageroute.js';
+import subscriptionroutes from './routers/subscriptionrouters.js';
 // Load environment variables
 dotenv.config();
 
@@ -48,7 +49,8 @@ connectDB();
 
 // Routes
 app.use('/api/user', userroutes);
-// app.use('/api/service', serviceroutes);
+app.use('/api/usage', usageroutes);
+app.use('/api/subscription', subscriptionroutes);
 
 app.get('/', (req, res) => {
     res.send('API is running...');
