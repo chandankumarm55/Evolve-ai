@@ -38,12 +38,12 @@ function App() {
           <div className="app-container">
 
             <Routes>
-              <Route path="/" element={ <LandingPage /> } />
+              <Route path="/" element={ <Home /> } />
               <Route path='/sign-up/*' element={ <SignUp /> } />
               <Route path='/sign-in/*' element={ <SignIn /> } />
               <Route element={ <RootLayout /> }>
                 <Route element={ <Pricing /> } path='/pricing' />
-                <Route path="/Evolve" element={ <Home /> } />
+
               </Route>
 
               <Route element={ <DashboardLayout /> }>

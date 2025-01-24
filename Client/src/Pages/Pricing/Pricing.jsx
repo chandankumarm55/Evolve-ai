@@ -1,8 +1,11 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { toast } from 'sonner';
 import Navbar from '../../components/FunctionalComponents/Header';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Card, CardHeader, CardContent } from '../../components/ui/card';
 import { Sparkles } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@clerk/clerk-react';
 
 const loadRazorpay = () => {
     return new Promise((resolve) => {
@@ -15,25 +18,83 @@ const loadRazorpay = () => {
 };
 
 const Pricing = () => {
+    const { userId: clerkUserId } = useAuth();
     const { theme } = useTheme();
+    const navigate = useNavigate();
     const isDark = theme === 'dark';
 
-    const handlePayment = async (amount) => {
-        const res = await loadRazorpay();
+    useEffect(() => {
+        if (!clerkUserId) {
+            toast.error('Please sign in to access pricing');
+            navigate('/sign-in');
+        }
+    }, [clerkUserId, navigate]);
 
+    const handlePayment = async (plan) => {
+        // Validate user is signed in
+        if (!clerkUserId) {
+            toast.error('Please sign in to purchase a plan');
+            return;
+        }
+
+        // Load Razorpay SDK
+        const res = await loadRazorpay();
         if (!res) {
-            alert('Razorpay SDK failed to load');
+            toast.error('Failed to load payment gateway. Please try again.');
             return;
         }
 
         const options = {
-            key: 'rzp_test_5ci9gXB1LXh49n',
-            amount: amount * 100,
+            key: 'rzp_test_sU4uosDvBZKlyf',
+            amount: plan.price * 100,
             currency: 'INR',
             name: 'Evolve AI',
-            description: 'AI Platform Subscription',
-            handler: function (response) {
-                alert('Payment successful! Payment ID: ' + response.razorpay_payment_id);
+            description: `${plan.name} Subscription`,
+            handler: async function (response) {
+                try {
+                    // Prepare subscription data
+                    const startDate = new Date().toISOString();
+                    const endDate = new Date(
+                        new Date().setMonth(new Date().getMonth() + 1)
+                    ).toISOString();
+
+                    const subscriptionData = {
+                        clerkId: clerkUserId,
+                        subscriptionPlan: plan.name,
+                        startDate,
+                        endDate,
+                        paymentId: response.razorpay_payment_id
+                    };
+
+                    // Send subscription update to backend
+                    const updateResponse = await fetch('http://localhost:3000/api/subscription/update', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(subscriptionData)
+                    });
+
+                    if (!updateResponse.ok) {
+                        throw new Error('Subscription update failed');
+                    }
+
+                    const result = await updateResponse.json();
+
+                    // Show success toast with payment details
+                    toast.success('Payment Successful', {
+                        description: `Plan: ${plan.name}\nAmount: ₹${plan.price}\nPayment ID: ${response.razorpay_payment_id}`
+                    });
+
+                    // Optional: Redirect to dashboard or subscription page
+                    navigate('/dashboard');
+                } catch (error) {
+                    // Detailed error handling
+                    console.error('Subscription update error:', error);
+                    toast.error('Payment Update Failed', {
+                        description: 'Payment received, but subscription update failed. Please contact support.'
+                    });
+                }
             },
             prefill: {
                 name: '',
@@ -46,14 +107,13 @@ const Pricing = () => {
         };
 
         const paymentObject = new window.Razorpay(options);
-        console.log(paymentObject);
         paymentObject.open();
     };
 
     const plans = [
         {
             name: 'Starter AI',
-            price: 20,
+            price: 10,
             description: 'Perfect for individuals exploring AI capabilities',
             features: [
                 'Access to basic AI models',
@@ -66,7 +126,7 @@ const Pricing = () => {
         },
         {
             name: 'Pro AI',
-            price: 40,
+            price: 30,
             description: 'Advanced AI features for growing teams',
             features: [
                 'Access to advanced AI models',
@@ -79,7 +139,7 @@ const Pricing = () => {
         },
         {
             name: 'Enterprise AI',
-            price: 30,
+            price: 20,
             description: 'Custom AI solutions for large organizations',
             features: [
                 'Custom AI model development',
@@ -162,7 +222,7 @@ const Pricing = () => {
                                         )) }
                                     </ul>
                                     <button
-                                        onClick={ () => handlePayment(plan.price) }
+                                        onClick={ () => handlePayment(plan) }
                                         className={ `mt-8 w-full px-6 py-3 rounded-lg text-white font-medium transition-all ${plan.highlight
                                             ? isDark
                                                 ? 'bg-indigo-500 hover:bg-indigo-600'

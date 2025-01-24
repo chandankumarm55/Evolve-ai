@@ -12,8 +12,7 @@ export const Dashboard = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const isDark = theme === 'dark';
     const navigate = useNavigate();
-    const { userId: clerkUserId } = useAuth(); // Get clerk user ID
-
+    const { userId: clerkUserId } = useAuth();
     useEffect(() => {
         const initializeUser = async () => {
             try {
@@ -29,9 +28,6 @@ export const Dashboard = () => {
 
                 // Check if userId already exists in localStorage
                 const existingUserId = localStorage.getItem('userId');
-                if (existingUserId) {
-                    return; // If userId exists, no need to make API call
-                }
 
                 // If no userId, make API call to create/fetch user
                 const response = await fetch('http://localhost:3000/api/user/login', {
@@ -49,6 +45,7 @@ export const Dashboard = () => {
 
 
                 const data = await response.json();
+                console.log('User data:', data);
 
                 if (data.user && data.user._id) {
                     localStorage.setItem('userId', data.user._id);

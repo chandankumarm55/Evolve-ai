@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '../../../components/ui/button';
 import { Card } from '../../../components/ui/card';
 import { ServiceContainer } from '../../../components/ui/ServiceContainer';
@@ -9,11 +9,9 @@ import {
     SelectTrigger,
     SelectValue,
 } from '../../../components/ui/select';
-import { motion } from 'framer-motion';
-import { Mic, Copy, StopCircle, Download, Languages } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Mic, Copy, StopCircle, Volume2, Languages, Download } from 'lucide-react';
 import { useTheme } from '../../../contexts/ThemeContext';
-import { useVoiceVisualizer, VoiceVisualizer } from 'react-voice-visualizer';
-import useDownloader from 'react-use-downloader';
 
 const LanguageSelector = ({ selectedLanguage, onLanguageChange, languages }) => {
     const { theme } = useTheme();
@@ -59,7 +57,7 @@ const TranscriptCard = ({ text, isListening }) => {
         <motion.div
             initial={ { opacity: 0 } }
             animate={ { opacity: 1 } }
-            className={ `min-h-[200px] p-4 rounded-lg border ${isDark
+            className={ `relative min-h-[200px] max-h-[400px] overflow-y-auto p-4 rounded-lg border overflow-auto ${isDark
                 ? 'bg-gray-800 border-gray-700 text-gray-200'
                 : 'bg-white border-gray-200'
                 }` }
@@ -98,10 +96,6 @@ const SpeechToText = () => {
     const { theme } = useTheme();
     const isDark = theme === 'dark';
 
-    const recorderControls = useVoiceVisualizer();
-    const { size, elapsed, percentage, download, cancel, error } = useDownloader();
-    const [audioBlob, setAudioBlob] = useState(null);
-
     const languages = [
         { code: 'en-US', name: 'English (US)' },
         { code: 'en-GB', name: 'English (UK)' },
@@ -123,6 +117,25 @@ const SpeechToText = () => {
         { code: 'zh-CN', name: 'Chinese (Simplified)' },
     ];
 
+    // Function to improve text formatting
+    const formatTranscript = (text) => {
+        // Remove extra spaces and trim
+        let formatted = text.replace(/\s+/g, ' ').trim();
+
+        // Capitalize first letter of each sentence
+        formatted = formatted.replace(/(^\s*\w|[\.\!\?]\s*\w)/g, function (match) {
+            return match.toUpperCase();
+        });
+
+        // Add periods at the end of sentences if missing
+        formatted = formatted.replace(/([^\.\!\?])$/g, '$1.');
+
+        // Ensure proper spacing after punctuation
+        formatted = formatted.replace(/([\.!\?])(\w)/g, '$1 $2');
+
+        return formatted;
+    };
+
     useEffect(() => {
         if (window.webkitSpeechRecognition) {
             const recognition = new webkitSpeechRecognition();
@@ -131,7 +144,6 @@ const SpeechToText = () => {
 
             recognition.onstart = () => {
                 setIsListening(true);
-                recorderControls.startRecording();
             };
 
             recognition.onend = () => {
@@ -139,8 +151,6 @@ const SpeechToText = () => {
                     recognition.start();
                 } else {
                     setIsListening(false);
-                    const recordedBlob = recorderControls.stopRecording();
-                    setAudioBlob(recordedBlob);
                 }
             };
 
@@ -160,7 +170,7 @@ const SpeechToText = () => {
                 if (finalTranscript) {
                     setTranscript(prev => {
                         const newTranscript = prev ? `${prev} ${finalTranscript}` : finalTranscript;
-                        return newTranscript.trim();
+                        return formatTranscript(newTranscript);
                     });
                     setInterimTranscript('');
                 } else {
@@ -221,36 +231,26 @@ const SpeechToText = () => {
         }
     };
 
-    const handleAudioDownload = () => {
-        if (audioBlob) {
-            const url = URL.createObjectURL(audioBlob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `recording-${new Date().toISOString()}.webm`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-        }
-    };
-
     if (!window.webkitSpeechRecognition) {
         return (
-            <Card className={ `p-4 text-center ${isDark ? 'bg-gray-800 border-gray-700 text-gray-200' : 'bg-white'}` }>
+            <Card className={ `p-4 text-center ${isDark ? 'bg-gray-800 border-gray-700 text-gray-200' : 'bg-white'
+                }` }>
                 <h2 className="text-lg font-semibold mb-2">Browser Not Supported</h2>
                 <p>Sorry, your browser doesn't support speech recognition.</p>
             </Card>
         );
     }
 
-    const displayText = transcript + (interimTranscript ? ' ' + interimTranscript : '');
+    const displayText = formatTranscript(transcript + (interimTranscript ? ' ' + interimTranscript : ''));
 
     return (
         <ServiceContainer>
-            <div className="flex-1 overflow-y-auto space-y-2">
-                <Card className={ `p-2 ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}` }>
-                    <div className="mb-6">
-                        <p className={ `text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}` }>
+            <div className="flex flex-col h-full space-y-2">
+                <Card className={ `flex-grow flex flex-col p-2 ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
+                    }` }>
+                    <div className="mb-4">
+                        <p className={ `text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'
+                            }` }>
                             Speak clearly into your microphone to convert speech to text.
                             Select your preferred language below.
                         </p>
@@ -267,18 +267,12 @@ const SpeechToText = () => {
                         isListening={ isListening }
                     />
 
-                    <div className="mt-4">
-                        <VoiceVisualizer
-                            mainBarColor={ isDark ? '#6d28d9' : '#7c3aed' }
-                            controls={ recorderControls }
-                        />
-                    </div>
-
-                    <div className="flex flex-wrap gap-2 mt-4">
+                    <div className="flex flex-wrap gap-2 mt-4 justify-center">
                         <Button
                             onClick={ isListening ? stopListening : startListening }
                             variant={ isListening ? "destructive" : "default" }
-                            className={ `${!isListening && isDark ? 'bg-purple-600 hover:bg-purple-700' : ''}` }
+                            className={ `${!isListening && isDark ? 'bg-purple-600 hover:bg-purple-700' : ''
+                                }` }
                         >
                             { isListening ? (
                                 <>
@@ -308,16 +302,7 @@ const SpeechToText = () => {
                             disabled={ !transcript }
                         >
                             <Download className="w-4 h-4 mr-2" />
-                            Download Text
-                        </Button>
-                        <Button
-                            onClick={ handleAudioDownload }
-                            variant="outline"
-                            className={ isDark ? 'border-gray-700 hover:bg-gray-700' : '' }
-                            disabled={ !audioBlob }
-                        >
-                            <Download className="w-4 h-4 mr-2" />
-                            Download Audio
+                            Download
                         </Button>
                     </div>
                 </Card>

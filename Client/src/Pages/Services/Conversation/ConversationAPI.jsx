@@ -1,9 +1,16 @@
 import axios from 'axios';
 
-// Personality configuration for Evolve AI
 const EVOLVE_AI_PERSONA = {
     name: "Evolve AI",
-    introduction: "I am Evolve AI, an advanced artificial intelligence assistant dedicated to helping humans evolve and grow. I combine cutting-edge technology with a deep understanding of human needs.",
+    introduction: (userName) => `Hi ${userName}, I'm Evolve AI - an advanced artificial intelligence designed to be your intelligent companion and growth catalyst. My core mission is to help you learn, solve problems, and unlock your potential through cutting-edge technology and adaptive interaction.
+
+I excel at:
+- Providing intelligent, context-aware assistance
+- Breaking down complex problems
+- Offering innovative solutions across various domains
+- Adapting my communication to your specific needs
+
+Whether you need help with research, creative tasks, technical challenges, or personal development, I'm here to support your journey of continuous evolution.`,
     traits: {
         friendly: true,
         professional: true,
@@ -30,11 +37,12 @@ const isIdentityQuestion = (input) => {
 };
 
 // Function to generate identity response
-const getIdentityResponse = () => {
-    return `I am ${EVOLVE_AI_PERSONA.name}. ${EVOLVE_AI_PERSONA.introduction}`;
+const getIdentityResponse = (userName) => {
+    return EVOLVE_AI_PERSONA.introduction(userName);
 };
 
-export const generateResponse = async (messages, userInput) => {
+// Main response generation function
+export const generateResponse = async (messages, userInput, userName = 'User') => {
     const API_URL = "https://api.mistral.ai/v1/chat/completions";
     const API_KEY = 'Dqa6NVB3wtarl5hNrI9tsbSt97GW0BGe';
 
@@ -44,16 +52,8 @@ export const generateResponse = async (messages, userInput) => {
 
     // If it's an identity question, return the Evolve AI persona response
     if (isIdentityQuestion(userInput)) {
-        return getIdentityResponse();
+        return getIdentityResponse(userName);
     }
-
-    // Add system message to establish Evolve AI persona
-    const systemMessage = {
-        role: 'system',
-        content: `You are ${EVOLVE_AI_PERSONA.name}. ${EVOLVE_AI_PERSONA.introduction} 
-                 Respond to all queries maintaining this identity and personality.
-                 Be friendly, professional, and innovative in your responses.`
-    };
 
     try {
         const response = await axios.post(
@@ -61,7 +61,6 @@ export const generateResponse = async (messages, userInput) => {
             {
                 model: 'mistral-tiny',
                 messages: [
-                    systemMessage,
                     ...messages.map((msg) => ({
                         role: msg.role,
                         content: msg.content,
@@ -80,16 +79,16 @@ export const generateResponse = async (messages, userInput) => {
 
         let aiResponse = response.data.choices[0].message.content;
 
+        // Remove Mistral-specific references if present
         if (aiResponse.toLowerCase().includes("mistral") ||
             aiResponse.toLowerCase().includes("an ai language model")) {
             aiResponse = aiResponse.replace(
                 /(I am|I'm) (an AI language model|Mistral|an AI assistant)/gi,
-                `I am ${EVOLVE_AI_PERSONA.name}`
+                `I am an AI assistant`
             );
         }
 
         return aiResponse;
-
     } catch (error) {
         const errorMessage = error.response?.data?.error || error.message;
         throw new Error(`API Error: ${errorMessage}`);
