@@ -51,7 +51,6 @@ export const checkUsageLimit = async(req, res, next) => {
     }
 };
 
-// Track usage
 export const trackUsage = async(req, res) => {
     const { clerkId } = req.body;
 

@@ -14,9 +14,11 @@ import { useNavigate } from 'react-router-dom';
 
 const DashboardIndex = () => {
     const navigate = useNavigate()
+    //acessin the current user 
     const { user } = useUser();
     const { theme } = useTheme();
     const isDark = theme === 'dark';
+
 
     const metrics = [
         {
@@ -47,12 +49,11 @@ const DashboardIndex = () => {
 
     return (
         <div className="p-6 space-y-6">
-            {/* Header Section */ }
             <div className="flex justify-between items-center">
                 <div className="space-y-1">
                     <h2 className="text-2xl font-bold tracking-tight">Dashboard</h2>
                     <p className={ `text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}` }>
-                        Welcome back! Here's an overview of your AI tools usage.
+                        Welcome back! <span className='font-bold'>{ user?.fullName }</span> Here's an overview of your AI tools usage.
                     </p>
                 </div>
 

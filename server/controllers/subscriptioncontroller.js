@@ -18,7 +18,7 @@ export const updateSubscription = async(req, res) => {
             status: 'active'
         };
 
-        // Clear usage tracking for premium users
+
         if (subscriptionPlan !== 'Free') {
             user.usage = [];
         }

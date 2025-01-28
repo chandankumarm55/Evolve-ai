@@ -5,8 +5,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../../contexts/ThemeContext';
 import DashboardHeader from './DashboardHeader';
 import { useAuth } from "@clerk/clerk-react"; // Add this import
+import { useDispatch } from 'react-redux';
+import { updateUser } from '../../redux/userSlice';
 
 export const Dashboard = () => {
+    const dispatch = useDispatch();
     const currentPath = useLocation().pathname;
     const { theme } = useTheme();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -23,13 +26,10 @@ export const Dashboard = () => {
                     return;
                 }
 
-                // Set clerk ID in localStorage
                 localStorage.setItem('clerkId', clerkUserId);
 
-                // Check if userId already exists in localStorage
                 const existingUserId = localStorage.getItem('userId');
 
-                // If no userId, make API call to create/fetch user
                 const response = await fetch('http://localhost:3000/api/user/login', {
                     method: 'POST',
                     headers: {
@@ -43,11 +43,11 @@ export const Dashboard = () => {
                     throw new Error('Failed to create/fetch user');
                 }
 
-
                 const data = await response.json();
                 console.log('User data:', data);
 
                 if (data.user && data.user._id) {
+                    dispatch(updateUser(data.user))
                     localStorage.setItem('userId', data.user._id);
                 } else {
                     throw new Error('No user ID received from server');
