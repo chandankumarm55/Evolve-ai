@@ -1,4 +1,4 @@
-import { Input } from '../../../components/ui/Input';
+import { Input } from '../../../components/ui/input';
 import { Button } from '../../../components/ui/button';
 import { Loader2, SendIcon } from 'lucide-react';
 
