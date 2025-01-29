@@ -56,7 +56,6 @@ const DashboardIndex = () => {
                         Welcome back! <span className='font-bold'>{ user?.fullName }</span> Here's an overview of your AI tools usage.
                     </p>
                 </div>
-
             </div>
 
             {/* Subscription Status */ }

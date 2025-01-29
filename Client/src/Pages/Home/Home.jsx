@@ -13,6 +13,9 @@ import HeroSection from '../../components/FunctionalComponents/HeroSection';
 import Description from './Description'
 import LaptopFrame from './LaptopFrame';
 import Features from './Features';
+import WhyEvolveAI from './WhyEvolveAI';
+import Introduction from './Introduction';
+import DonationPromo from './DonationPromo';
 const features = [
     {
         icon: 'MessageSquare',
@@ -56,14 +59,16 @@ const Home = () => {
             </section>
 
             <LaptopFrame />
+            <Introduction />
+            <DonationPromo />
+            <WhyEvolveAI />
+
             <section className={ `py-20 ${isDark ? 'bg-black' : 'bg-white'}` }>
                 <Testimonials />
             </section>
 
-            {/* Footer */ }
-            <footer className="bg-zinc-900 text-white py-12">
-                <Footer />
-            </footer>
+            <Footer />
+
         </div>
     );
 };

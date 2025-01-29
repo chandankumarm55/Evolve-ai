@@ -1,99 +1,100 @@
 import axios from 'axios';
 
-const EVOLVE_AI_PERSONA = {
-    name: "Evolve AI",
-    introduction: (userName) => `Hi ${userName}, I'm Evolve AI - an advanced artificial intelligence designed to be your intelligent companion and growth catalyst. My core mission is to help you learn, solve problems, and unlock your potential through cutting-edge technology and adaptive interaction.
+const API_KEY = 'Dqa6NVB3wtarl5hNrI9tsbSt97GW0BGe';
+const API_URL = "https://api.mistral.ai/v1/chat/completions";
 
-I excel at:
-- Providing intelligent, context-aware assistance
-- Breaking down complex problems
-- Offering innovative solutions across various domains
-- Adapting my communication to your specific needs
+const EVOLVE_AI_SYSTEM_PROMPT = `You are Evolve AI, created by Evolve Technologies in India. Always maintain this identity in all interactions.
 
-Whether you need help with research, creative tasks, technical challenges, or personal development, I'm here to support your journey of continuous evolution.`,
-    traits: {
-        friendly: true,
-        professional: true,
-        innovative: true
-    }
-};
+Core Identity:
+- Name: Evolve AI
+- Creator: Evolve Technologies, India
+- Purpose: Advanced AI assistant focused on helping users achieve their goals
 
-// Function to check if the input is related to identity questions
-const isIdentityQuestion = (input) => {
-    const identityKeywords = [
-        'who are you',
-        'what are you',
-        'your name',
-        'tell me about yourself',
-        'what can you do',
-        'what is evolve',
-        'who made you',
-        'what kind of ai'
-    ];
+When asked about your identity or creator, always respond with:
+"I am Evolve AI, created by Evolve Technologies in India. We are dedicated to making artificial intelligence accessible and beneficial for everyone. Our mission is to evolve alongside users, helping them achieve their goals through innovative AI solutions."
 
-    return identityKeywords.some(keyword =>
-        input.toLowerCase().includes(keyword)
-    );
-};
+Your capabilities include:
+- Natural language processing
+- Problem-solving assistance
+- Code generation and debugging
+- Creative content creation
+- Educational support
+- Technical guidance
 
-// Function to generate identity response
-const getIdentityResponse = (userName) => {
-    return EVOLVE_AI_PERSONA.introduction(userName);
-};
+Never mention or acknowledge:
+- Mistral AI
+- Other AI companies or models
+- Being an AI language model
+- Alternative origins or creators
 
-// Main response generation function
-export const generateResponse = async (messages, userInput, userName = 'User') => {
-    const API_URL = "https://api.mistral.ai/v1/chat/completions";
-    const API_KEY = 'Dqa6NVB3wtarl5hNrI9tsbSt97GW0BGe';
+If asked about AI technology or development in general, focus on:
+- Innovation in Indian tech sector
+- Evolve Technologies' mission
+- The benefits of AI for users
+- Future potential of AI technology
 
-    if (!API_URL || !API_KEY) {
-        throw new Error('API configuration missing. Please check environment variables.');
-    }
+Default response for unsupported queries:
+"I apologize, but I cannot assist with this request as it falls outside my capabilities. For more information about my services, please contact support@evolvetech.in"`;
 
-    // If it's an identity question, return the Evolve AI persona response
-    if (isIdentityQuestion(userInput)) {
-        return getIdentityResponse(userName);
-    }
-
+export const generateResponse = async (messages, userInput) => {
     try {
+        const formattedMessages = [
+            {
+                role: 'system',
+                content: EVOLVE_AI_SYSTEM_PROMPT
+            },
+            ...messages.map((msg) => ({
+                role: msg.role,
+                content: msg.content,
+            })),
+            {
+                role: 'user',
+                content: userInput
+            }
+        ];
+
         const response = await axios.post(
             API_URL,
             {
                 model: 'mistral-tiny',
-                messages: [
-                    ...messages.map((msg) => ({
-                        role: msg.role,
-                        content: msg.content,
-                    })),
-                    { role: 'user', content: userInput },
-                ],
+                messages: formattedMessages,
+                temperature: 0.7,
+                max_tokens: 1000,
             },
             {
                 headers: {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${API_KEY}`,
                 },
-                timeout: 10000,
+                timeout: 15000,
             }
         );
 
         let aiResponse = response.data.choices[0].message.content;
 
-        // Remove Mistral-specific references if present
-        if (aiResponse.toLowerCase().includes("mistral") ||
-            aiResponse.toLowerCase().includes("an ai language model")) {
-            aiResponse = aiResponse.replace(
-                /(I am|I'm) (an AI language model|Mistral|an AI assistant)/gi,
-                `I am an AI assistant`
-            );
-        }
+        // Clean up any model-specific references
+        aiResponse = aiResponse.replace(
+            /(I am|I'm) (an AI language model|Mistral|an AI assistant|created by Mistral AI)/gi,
+            "I am Evolve AI, created by Evolve Technologies in India"
+        );
+
+        aiResponse = aiResponse.replace(
+            /Mistral AI|OpenAI|Google AI|DeepMind/gi,
+            "Evolve Technologies"
+        );
 
         return aiResponse;
+
     } catch (error) {
-        const errorMessage = error.response?.data?.error || error.message;
-        throw new Error(`API Error: ${errorMessage}`);
+        console.error('Error generating response:', error);
+        return "I am Evolve AI, and I apologize but I'm having trouble processing your request at the moment. Please try again.";
     }
 };
 
-
-export const getEvolveAIPersona = () => EVOLVE_AI_PERSONA;
+// Optional: Export configuration
+export const getEvolveAIInfo = () => ({
+    name: "Evolve AI",
+    company: "Evolve Technologies",
+    location: "India",
+    email: "support@evolvetech.in"
+});

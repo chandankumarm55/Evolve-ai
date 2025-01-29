@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 import { ServiceContainer } from '../../../components/ui/ServiceContainer';
 import { LanguageSelect } from '../../../components/ui/LanguageSelect';
 import { Button } from '../../../components/ui/button';
-import { ArrowRight, Loader2 } from 'lucide-react';
+import { ArrowRight, Loader2, RotateCcw } from 'lucide-react';
 import { useTheme } from '../../../contexts/ThemeContext';
 
 const languages = [
@@ -37,50 +36,68 @@ export const Translator = () => {
     const { theme } = useTheme();
     const isDark = theme === 'dark';
 
+    const translate = async (langFrom, langTo, text) => {
+        if (!text || !langFrom || !langTo) {
+            throw new Error('Missing required translation parameters');
+        }
+
+        // Use the same URL structure as the Java code
+        const urlStr = "https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec" +
+            "?q=" + encodeURIComponent(text) +
+            "&target=" + langTo +
+            "&source=" + langFrom;
+
+        try {
+            const response = await fetch(urlStr, {
+                method: 'GET',
+                headers: {
+                    'User-Agent': 'Mozilla/5.0',
+                    'Accept': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`Translation failed with status: ${response.status}`);
+            }
+
+            const data = await response.text(); // Use text() instead of json() to match Java implementation
+            return data;
+        } catch (error) {
+            throw new Error('Translation failed: ' + error.message);
+        }
+    };
+
     const handleTranslate = async () => {
-        if (!sourceText || !sourceLang || !targetLang) return;
-
-        const encodedParams = new URLSearchParams();
-        encodedParams.set('q', sourceText);
-        encodedParams.set('source', sourceLang);
-        encodedParams.set('target', targetLang);
-
-        const options = {
-            method: 'POST',
-            url: 'https://google-translate1.p.rapidapi.com/language/translate/v2',
-            headers: {
-                'content-type': 'application/x-www-form-urlencoded',
-                'Accept-Encoding': 'application/gzip',
-                'X-RapidAPI-Key': import.meta.env.VITE_RAPIDAPI_KEY,
-                'X-RapidAPI-Host': 'google-translate1.p.rapidapi.com'
-            },
-            data: encodedParams
-        };
+        if (!sourceText) {
+            setError('Please enter text to translate');
+            return;
+        }
 
         setIsLoading(true);
         setError(null);
 
         try {
-            const response = await axios.request(options);
-            const translation = response.data.data.translations[0].translatedText;
-            setTranslatedText(translation);
+            const result = await translate(sourceLang, targetLang, sourceText);
+            setTranslatedText(result);
         } catch (error) {
-            console.error(error);
-            setError("Translation failed. Please try again.");
+            console.error('Translation error:', error);
+            setError(error.message || 'Translation failed. Please try again.');
         } finally {
             setIsLoading(false);
         }
     };
 
     const swapLanguages = () => {
-        const temp = sourceLang;
         setSourceLang(targetLang);
-        setTargetLang(temp);
+        setTargetLang(sourceLang);
+        setSourceText(translatedText);
+        setTranslatedText(sourceText);
+    };
 
-        if (translatedText) {
-            setSourceText(translatedText);
-            setTranslatedText(sourceText);
-        }
+    const handleReset = () => {
+        setSourceText('');
+        setTranslatedText('');
+        setError(null);
     };
 
     return (
@@ -98,9 +115,10 @@ export const Translator = () => {
                             value={ sourceText }
                             onChange={ (e) => setSourceText(e.target.value) }
                             placeholder="Enter text to translate..."
-                            className={ `mt-2 w-full h-[calc(100%-4rem)] p-4 rounded-lg border-2 resize-none ${isDark
-                                ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
-                                : 'bg-white border-gray-200 text-gray-900 placeholder-gray-500'
+                            className={ `mt-2 w-full h-[calc(100%-4rem)] p-4 rounded-lg border-2 resize-none 
+                                ${isDark
+                                    ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
+                                    : 'bg-white border-gray-200 text-gray-900 placeholder-gray-500'
                                 } focus:border-purple-500 outline-none transition-colors` }
                         />
                     </div>
@@ -115,9 +133,10 @@ export const Translator = () => {
                             label="Translate to"
                         />
                         <div
-                            className={ `mt-2 w-full h-[calc(100%-4rem)] p-4 rounded-lg border-2 ${isDark
-                                ? 'bg-gray-700 border-gray-600 text-white'
-                                : 'bg-white border-gray-200 text-gray-900'
+                            className={ `mt-2 w-full h-[calc(100%-4rem)] p-4 rounded-lg border-2 
+                                ${isDark
+                                    ? 'bg-gray-700 border-gray-600 text-white'
+                                    : 'bg-white border-gray-200 text-gray-900'
                                 }` }
                         >
                             { isLoading ? (
@@ -125,9 +144,17 @@ export const Translator = () => {
                                     <Loader2 className="animate-spin w-6 h-6" />
                                 </div>
                             ) : error ? (
-                                <div className="text-red-500">{ error }</div>
+                                <div className="text-red-500 p-2 bg-red-50 rounded">
+                                    { error }
+                                </div>
                             ) : (
-                                translatedText || 'Translation will appear here...'
+                                <div className="h-full">
+                                    { translatedText || (
+                                        <span className="text-gray-400">
+                                            Translation will appear here...
+                                        </span>
+                                    ) }
+                                </div>
                             ) }
                         </div>
                     </div>
@@ -138,8 +165,18 @@ export const Translator = () => {
                         onClick={ swapLanguages }
                         variant="outline"
                         className="flex items-center gap-2"
+                        disabled={ !translatedText || isLoading }
                     >
                         Swap Languages
+                    </Button>
+                    <Button
+                        onClick={ handleReset }
+                        variant="outline"
+                        className="flex items-center gap-2"
+                        disabled={ !sourceText && !translatedText }
+                    >
+                        <RotateCcw className="w-4 h-4" />
+                        Reset
                     </Button>
                     <Button
                         onClick={ handleTranslate }
@@ -147,9 +184,13 @@ export const Translator = () => {
                         disabled={ !sourceText || isLoading }
                     >
                         { isLoading ? (
-                            <>Translating <Loader2 className="animate-spin w-4 h-4" /></>
+                            <>
+                                Translating <Loader2 className="animate-spin w-4 h-4" />
+                            </>
                         ) : (
-                            <>Translate <ArrowRight className="w-4 h-4" /></>
+                            <>
+                                Translate <ArrowRight className="w-4 h-4" />
+                            </>
                         ) }
                     </Button>
                 </div>

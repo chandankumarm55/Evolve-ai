@@ -13,7 +13,7 @@ import Conversation from './Pages/Services/Conversation/Conversation';
 import { Dashboard } from './components/Layouts/Dashboard';
 import { ImageGeneration } from './Pages/Services/ImageGeneration/ImageGeneration';
 import { TextToSpeech } from './Pages/Services/TextToSpeech';
-import { JokeGenerator } from './Pages/Services/JokeGenerator';
+import JokeGenerator from './Pages/Services/JokeGenerator';
 import { Translator } from './Pages/Services/LanguageTrasalation/Translator';
 import { Dictionary } from './Pages/Services/Dictionary';
 import DashboardIndex from './Pages/Services/DashboardIndex';
@@ -22,6 +22,10 @@ import QRCodeGenerator from './Pages/Services/QRCodeGenerator/QRCodeGenerator';
 import { Toaster } from "./components/ui/toaster";
 import Pricing from './Pages/Pricing/Pricing';
 import SignIn from './Pages/Auth/SingIn';
+import TermsAndConditions from './Pages/TermsAndConditions/TermsAndConditions';
+import PrivacyPolicy from './Pages/PrivacyPolicy/PrivacyPolicy';
+import RefundPolicy from './Pages/RefundPolicy/RefundPolicy';
+import DonatePage from './Pages/DonatePage/DonatePage';
 
 // Clerk Publishable Key
 const PUBLISHABLE_KEY = NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
@@ -41,11 +45,14 @@ function App() {
               <Route path="/" element={ <Home /> } />
               <Route path='/sign-up/*' element={ <SignUp /> } />
               <Route path='/sign-in/*' element={ <SignIn /> } />
+              <Route path='/donation' element={ <DonatePage /> } />
               <Route element={ <RootLayout /> }>
+                <Route path='/terms-and-conditions' element={ <TermsAndConditions /> } />
+                <Route path='/privacy-policy' element={ <PrivacyPolicy /> } />
                 <Route element={ <Pricing /> } path='/pricing' />
+                <Route element={ <RefundPolicy /> } path='/refund-policy' />
 
               </Route>
-
               <Route element={ <DashboardLayout /> }>
                 <Route path="/dashboard" element={ <Dashboard /> } >
                   <Route index element={ <DashboardIndex /> } />
