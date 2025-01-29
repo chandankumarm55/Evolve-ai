@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { Input } from '../../../components/ui/input';
 import { Button } from '../../../components/ui/button';
-import { ServiceContainer } from '../../../components/ui/serviceContainer';
+import { ServiceContainer } from '../../../components/ui/ServiceContainer';
 import {
     Download,
     Upload,
