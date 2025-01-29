@@ -1,20 +1,20 @@
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
 
+// https://vitejs.dev/config/
 export default defineConfig({
     plugins: [react()],
-    build: {
-        rollupOptions: {
-            external: [
-                '@clerk/clerk-react', // Add external libraries you might need here
-                'three', // If you need three.js externally
-            ],
-            output: {
-                globals: {
-                    '@clerk/clerk-react': 'ClerkReact',
-                    'three': 'THREE',
-                },
-            },
+    server: {
+        port: 3000, // Change port if needed
+        open: true, // Automatically open browser
+    },
+    resolve: {
+        alias: {
+            "@": "/src", // Allows importing like "@/components/Component"
         },
+    },
+    build: {
+        outDir: "dist",
+        sourcemap: true, // Helps with debugging
     },
 });
