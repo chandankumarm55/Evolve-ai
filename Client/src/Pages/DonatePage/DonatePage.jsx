@@ -6,6 +6,7 @@ import Footer from '../../components/FunctionalComponents/Footer';
 import { CreditCard, Bitcoin, Heart, Share2, MessageCircle } from 'lucide-react';
 import { FaAmazonPay } from "react-icons/fa";
 import { FaWallet } from "react-icons/fa";
+import { useNavigate } from 'react-router-dom';
 
 const PaymentOption = ({ icon: Icon, title, description }) => {
     const { theme } = useTheme();
@@ -42,6 +43,7 @@ const ImpactCard = ({ icon: Icon, title, description }) => {
 const DonatePage = () => {
     const { theme } = useTheme();
     const isDark = theme === 'dark';
+    const navigate = useNavigate()
 
     return (
         <>
@@ -104,10 +106,12 @@ const DonatePage = () => {
                                 or providing valuable feedback to help us improve.
                             </p>
                             <div className="flex justify-center space-x-4">
-                                <button className={ `px-6 py-3 rounded-lg font-medium ${isDark
-                                    ? 'bg-pink-600 hover:bg-pink-700 text-white'
-                                    : 'bg-pink-500 hover:bg-pink-600 text-white'
-                                    } transition-colors` }>
+                                <button
+                                    onClick={ () => window.location.href = "https://razorpay.me/@kumarmunirajuchandan" }
+                                    className={ `px-6 py-3 rounded-lg font-medium ${isDark
+                                        ? 'bg-pink-600 hover:bg-pink-700 text-white'
+                                        : 'bg-pink-500 hover:bg-pink-600 text-white'
+                                        } transition-colors` }>
                                     Make a Donation
                                 </button>
                                 <button className={ `px-6 py-3 rounded-lg font-medium ${isDark

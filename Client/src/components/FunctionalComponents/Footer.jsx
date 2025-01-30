@@ -47,6 +47,11 @@ const Footer = () => {
                         </h3>
                         <ul className="space-y-2">
                             <li>
+                                <Link to="/pricing" className="hover:text-blue-500 transition-colors">
+                                    Pricing
+                                </Link>
+                            </li>
+                            <li>
                                 <Link to="/terms-and-conditions" className="hover:text-blue-500 transition-colors">
                                     Terms & Conditions
                                 </Link>

@@ -45,7 +45,7 @@ function App() {
               <Route path="/" element={ <Home /> } />
               <Route path='/sign-up/*' element={ <SignUp /> } />
               <Route path='/sign-in/*' element={ <SignIn /> } />
-              <Route path='/donation' element={ <DonatePage /> } />
+              <Route path='/donate' element={ <DonatePage /> } />
               <Route element={ <RootLayout /> }>
                 <Route path='/terms-and-conditions' element={ <TermsAndConditions /> } />
                 <Route path='/privacy-policy' element={ <PrivacyPolicy /> } />

@@ -8,6 +8,7 @@ import { ServiceContainer } from '../../../components/ui/ServiceContainer';
 import RandomQuestions from './RandomQuestions';
 import { updateUser } from '../../../redux/userSlice';
 import axios from 'axios';
+import { UsageTrackUrl } from '../../../Utilities/constant';
 
 
 const Conversation = () => {
@@ -34,7 +35,7 @@ const Conversation = () => {
         }
 
         try {
-            const response = await axios.post('http://localhost:3000/api/usage/track', {
+            const response = await axios.post(UsageTrackUrl, {
                 clerkId,
             });
 

@@ -7,6 +7,7 @@ import DashboardHeader from './DashboardHeader';
 import { useAuth } from "@clerk/clerk-react"; // Add this import
 import { useDispatch } from 'react-redux';
 import { updateUser } from '../../redux/userSlice';
+import { LoginRouteUrl } from '../../Utilities/constant';
 
 export const Dashboard = () => {
     const dispatch = useDispatch();
@@ -30,7 +31,7 @@ export const Dashboard = () => {
 
                 const existingUserId = localStorage.getItem('userId');
 
-                const response = await fetch('http://localhost:3000/api/user/login', {
+                const response = await fetch(LoginRouteUrl, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

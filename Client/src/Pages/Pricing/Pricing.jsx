@@ -3,9 +3,10 @@ import { toast } from 'sonner';
 import Navbar from '../../components/FunctionalComponents/Header';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Card, CardHeader, CardContent } from '../../components/ui/card';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Check, X } from 'lucide-react'; // Added Check and X icons
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@clerk/clerk-react';
+import { SubscriptionUpdateUrl } from '../../Utilities/constant';
 
 const loadRazorpay = () => {
     return new Promise((resolve) => {
@@ -23,21 +24,15 @@ const Pricing = () => {
     const navigate = useNavigate();
     const isDark = theme === 'dark';
 
-    useEffect(() => {
-        if (!clerkUserId) {
-            toast.error('Please sign in to access pricing');
-            navigate('/sign-in');
-        }
-    }, [clerkUserId, navigate]);
-
     const handlePayment = async (plan) => {
         // Validate user is signed in
         if (!clerkUserId) {
-            toast.error('Please sign in to purchase a plan');
+            toast.error('Please sign in to access pricing');
+            navigate('/sign-in');
             return;
         }
 
-        // Load Razorpay SDK
+
         const res = await loadRazorpay();
         if (!res) {
             toast.error('Failed to load payment gateway. Please try again.');
@@ -67,7 +62,7 @@ const Pricing = () => {
                     };
 
                     // Send subscription update to backend
-                    const updateResponse = await fetch('http://localhost:3000/api/subscription/update', {
+                    const updateResponse = await fetch(SubscriptionUpdateUrl, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -112,43 +107,52 @@ const Pricing = () => {
 
     const plans = [
         {
+            name: 'Free AI',
+            price: 0,
+            description: 'Explore basic AI features for free',
+            features: {
+                'Translation': true,
+                'Speech-to-Text': true,
+                'Code Generation': true,
+                'Conversation': true,
+                'Image Generation': false,
+                'Advanced Analytics': false,
+                'Priority Support': false,
+                'Custom Model Fine-Tuning': false
+            },
+            highlight: false
+        },
+        {
             name: 'Starter AI',
             price: 10,
             description: 'Perfect for individuals exploring AI capabilities',
-            features: [
-                'Access to basic AI models',
-                'Up to 100 API calls per day',
-                'Basic analytics dashboard',
-                'Email support response within 24h',
-                'Community forum access'
-            ],
+            features: {
+                'Translation': true,
+                'Speech-to-Text': true,
+                'Code Generation': true,
+                'Conversation': true,
+                'Image Generation': true,
+                'Advanced Analytics': false,
+                'Priority Support': false,
+                'Custom Model Fine-Tuning': false
+            },
             highlight: false
         },
         {
             name: 'Pro AI',
             price: 30,
             description: 'Advanced AI features for growing teams',
-            features: [
-                'Access to advanced AI models',
-                'Unlimited API calls',
-                'Advanced analytics & monitoring',
-                'Priority support with 4h response',
-                'Custom model fine-tuning'
-            ],
+            features: {
+                'Translation': true,
+                'Speech-to-Text': true,
+                'Code Generation': true,
+                'Conversation': true,
+                'Image Generation': true,
+                'Advanced Analytics': true,
+                'Priority Support': true,
+                'Custom Model Fine-Tuning': true
+            },
             highlight: true
-        },
-        {
-            name: 'Enterprise AI',
-            price: 20,
-            description: 'Custom AI solutions for large organizations',
-            features: [
-                'Custom AI model development',
-                'Dedicated infrastructure',
-                'Enterprise-grade security',
-                '24/7 dedicated support',
-                'Full API access with SLA'
-            ],
-            highlight: false
         }
     ];
 
@@ -199,22 +203,13 @@ const Pricing = () => {
                                 </CardHeader>
                                 <CardContent>
                                     <ul className="mt-6 space-y-4">
-                                        { plan.features.map((feature, index) => (
-                                            <li key={ index } className="flex">
-                                                <svg
-                                                    className={ `flex-shrink-0 w-6 h-6 ${isDark ? 'text-indigo-400' : 'text-indigo-600'
-                                                        }` }
-                                                    fill="none"
-                                                    stroke="currentColor"
-                                                    viewBox="0 0 24 24"
-                                                >
-                                                    <path
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        strokeWidth="2"
-                                                        d="M5 13l4 4L19 7"
-                                                    />
-                                                </svg>
+                                        { Object.entries(plan.features).map(([feature, isAvailable]) => (
+                                            <li key={ feature } className="flex items-center">
+                                                { isAvailable ? (
+                                                    <Check className={ `w-5 h-5 ${isDark ? 'text-green-400' : 'text-green-600'}` } />
+                                                ) : (
+                                                    <X className={ `w-5 h-5 ${isDark ? 'text-red-400' : 'text-red-600'}` } />
+                                                ) }
                                                 <span className={ `ml-3 ${isDark ? 'text-gray-300' : 'text-gray-700'}` }>
                                                     { feature }
                                                 </span>
