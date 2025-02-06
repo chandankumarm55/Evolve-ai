@@ -5,20 +5,16 @@
     "type": "module",
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
-        "dev": "nodemon index.js"
+        "start": "nodemon index.js"
     },
+    "keywords": [],
     "author": "",
     "license": "ISC",
     "description": "",
     "dependencies": {
-        "@fal-ai/client": "^1.2.1",
-        "@google/generative-ai": "^0.21.0",
-        "axios": "^1.7.9",
+        "cors": "^2.8.5",
         "dotenv": "^16.4.7",
-        "express": "^4.21.2",
-        "llamaai": "^1.0.4",
-        "mongoose": "^8.9.3",
-        "nodemon": "^3.1.9",
-        "openai": "^4.77.3"
+        "mongoose": "^8.9.5",
+        "nodemon": "^3.1.9"
     }
 }
