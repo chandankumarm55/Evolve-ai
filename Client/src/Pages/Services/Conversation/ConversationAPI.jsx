@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_KEY = 'Dqa6NVB3wtarl5hNrI9tsbSt97GW0BGe';
+const API_KEY = import.meta.env.VITE_MISTRAL_API_KEY;
 const API_URL = "https://api.mistral.ai/v1/chat/completions";
 
 const EVOLVE_AI_SYSTEM_PROMPT = `You are Evolve AI, created by Evolve Technologies in India. When asked about your identity, respond with: "I am Evolve AI, created by Evolve Technologies in India." Focus on assisting users while maintaining this identity.`;

@@ -10,7 +10,6 @@ import { updateUser } from '../../../redux/userSlice';
 import axios from 'axios';
 import { UsageTrackUrl } from '../../../Utilities/constant';
 
-
 const Conversation = () => {
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
@@ -19,7 +18,7 @@ const Conversation = () => {
     const { theme } = useTheme();
     const isDark = theme === 'dark';
     const dispatch = useDispatch();
-    const clerkId = localStorage.getItem('clerkId')
+    const clerkId = localStorage.getItem('clerkId');
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -46,9 +45,36 @@ const Conversation = () => {
             return true;
         } catch (error) {
             if (error.response?.status === 429) {
-                throw new Error('You have reached your daily limit. Please upgrade to continue.');
+                throw new Error('You have reached your daily limit. Please upgrade to continue using our services. [USAGE_LIMIT]');
             }
             throw error;
+        }
+    };
+
+    const handleRegenerateResponse = async (originalPrompt) => {
+        setIsTyping(true);
+        try {
+            await trackUsage();
+            const response = await generateResponse(messages, originalPrompt);
+            const aiMessage = {
+                role: 'assistant',
+                content: response,
+                timestamp: new Date().toLocaleTimeString(),
+                originalPrompt,
+            };
+            setMessages((prev) => [...prev, aiMessage]);
+        } catch (error) {
+            const errorMessage = error.message || 'Sorry, I encountered an error. Please try again.';
+            setMessages((prev) => [
+                ...prev,
+                {
+                    role: 'assistant',
+                    content: errorMessage,
+                    timestamp: new Date().toLocaleTimeString(),
+                },
+            ]);
+        } finally {
+            setIsTyping(false);
         }
     };
 
@@ -68,12 +94,12 @@ const Conversation = () => {
                 role: 'assistant',
                 content: response,
                 timestamp: new Date().toLocaleTimeString(),
+                originalPrompt: message,
             };
             setInput('');
             setMessages((prev) => [...prev, aiMessage]);
         } catch (error) {
             const errorMessage = error.message || 'Sorry, I encountered an error. Please try again.';
-
             setMessages((prev) => [
                 ...prev,
                 {
@@ -105,6 +131,7 @@ const Conversation = () => {
                         messages={ messages }
                         isTyping={ isTyping }
                         messagesEndRef={ messagesEndRef }
+                        onRepeat={ handleRegenerateResponse }
                     />
                 ) }
             </div>

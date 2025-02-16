@@ -1,4 +1,3 @@
-// models/User.js
 import mongoose from "mongoose";
 
 const usageSchema = new mongoose.Schema({
@@ -29,6 +28,7 @@ const userSchema = new mongoose.Schema({
     },
     subscriptionPlan: {
         type: String,
+        enum: ['Free', 'Starter', 'Pro'], // Explicitly define available plans
         default: 'Free'
     },
     subscriptionDetails: {
@@ -38,7 +38,9 @@ const userSchema = new mongoose.Schema({
             type: String,
             enum: ['active', 'expired', 'cancelled'],
             default: 'active'
-        }
+        },
+        paymentId: String, // Store Razorpay payment ID
+        priceAtPurchase: Number, // Store price at time of purchase
     },
     usage: [usageSchema],
     metrics: {
@@ -64,6 +66,11 @@ const userSchema = new mongoose.Schema({
         default: Date.now
     }
 });
+// Add method to check if subscription is expired
+userSchema.methods.isSubscriptionExpired = function() {
+    if (this.subscriptionPlan === 'Free') return false;
+    return new Date() > new Date(this.subscriptionDetails.endDate);
+};
 
 const User = mongoose.model('User', userSchema);
 export default User;

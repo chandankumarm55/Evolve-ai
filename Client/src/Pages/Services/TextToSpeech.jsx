@@ -18,11 +18,14 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "../../components/ui/tooltip";
+import { useTheme } from '../../contexts/ThemeContext';
 
 export const TextToSpeech = () => {
     const [entries, setEntries] = useState([]);
     const [isGenerating, setIsGenerating] = useState(false);
     const [text, setText] = useState('');
+    const { theme } = useTheme();
+    const isDark = theme === 'dark';
     const [voices, setVoices] = useState([]);
     const [selectedVoice, setSelectedVoice] = useState('');
     const [playingIndex, setPlayingIndex] = useState(null);
@@ -192,14 +195,22 @@ export const TextToSpeech = () => {
 
                         <div className="flex flex-wrap gap-4">
                             <div className="flex-1 min-w-[200px]">
-                                <label className="text-sm font-medium mb-1 block">Voice Selection</label>
+                                <label className={ `text-sm font-medium mb-1 block ${isDark ? 'text-gray-200' : 'text-gray-700'}` }>
+                                    Voice Selection
+                                </label>
                                 <select
-                                    className="w-full px-3 py-2 rounded-md border bg-background"
+                                    className={ `w-full px-3 py-2 rounded-md border ${isDark
+                                        ? 'border-gray-600 text-gray-200'
+                                        : 'border-gray-300 text-gray-700'
+                                        } bg-transparent` }
                                     value={ selectedVoice }
                                     onChange={ (e) => setSelectedVoice(e.target.value) }
                                 >
                                     { voices.map(voice => (
-                                        <option key={ voice.voiceURI } value={ voice.voiceURI }>
+                                        <option
+                                            key={ voice.voiceURI }
+                                            value={ voice.voiceURI }
+                                        >
                                             { voice.name } ({ voice.lang })
                                         </option>
                                     )) }

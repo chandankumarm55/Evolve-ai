@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ServiceContainer } from '../../../components/ui/ServiceContainer';
 import { LanguageSelect } from '../../../components/ui/LanguageSelect';
 import { Button } from '../../../components/ui/button';
-import { ArrowRight, Loader2, RotateCcw } from 'lucide-react';
+import { ArrowRight, Loader2, RotateCcw, Bot } from 'lucide-react';
 import { useTheme } from '../../../contexts/ThemeContext';
 
 const languages = [
@@ -33,38 +33,35 @@ export const Translator = () => {
     const [targetLang, setTargetLang] = useState('es');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [translationMethod, setTranslationMethod] = useState('ai');
     const { theme } = useTheme();
     const isDark = theme === 'dark';
 
-    const translate = async (langFrom, langTo, text) => {
-        if (!text || !langFrom || !langTo) {
-            throw new Error('Missing required translation parameters');
+
+
+    // Function for AI-based translation
+    const translateWithAI = async (langFrom, langTo, text) => {
+        if (!text) {
+            throw new Error('No text provided for translation');
         }
 
-        // Use the same URL structure as the Java code
-        const urlStr = "https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec" +
-            "?q=" + encodeURIComponent(text) +
-            "&target=" + langTo +
-            "&source=" + langFrom;
+        // Get language names from codes
+        const fromLangName = languages.find(l => l.code === langFrom)?.name || langFrom;
+        const toLangName = languages.find(l => l.code === langTo)?.name || langTo;
 
-        try {
-            const response = await fetch(urlStr, {
-                method: 'GET',
-                headers: {
-                    'User-Agent': 'Mozilla/5.0',
-                    'Accept': 'application/json'
-                }
-            });
+        // Construct the prompt
+        const prompt = `${text} in ${toLangName} only the translated word`;
 
-            if (!response.ok) {
-                throw new Error(`Translation failed with status: ${response.status}`);
-            }
+        // Call the pollinations.ai API
+        const url = `https://text.pollinations.ai/openai/${encodeURIComponent(prompt)}`;
 
-            const data = await response.text(); // Use text() instead of json() to match Java implementation
-            return data;
-        } catch (error) {
-            throw new Error('Translation failed: ' + error.message);
+        const response = await fetch(url);
+
+        if (!response.ok) {
+            throw new Error(`AI translation failed with status: ${response.status}`);
         }
+
+        return await response.text();
     };
 
     const handleTranslate = async () => {
@@ -77,7 +74,12 @@ export const Translator = () => {
         setError(null);
 
         try {
-            const result = await translate(sourceLang, targetLang, sourceText);
+            let result;
+            if (translationMethod === 'ai') {
+                result = await translateWithAI(sourceLang, targetLang, sourceText);
+            } else {
+                result = await translateWithGoogleScript(sourceLang, targetLang, sourceText);
+            }
             setTranslatedText(result);
         } catch (error) {
             console.error('Translation error:', error);
@@ -144,7 +146,7 @@ export const Translator = () => {
                                     <Loader2 className="animate-spin w-6 h-6" />
                                 </div>
                             ) : error ? (
-                                <div className="text-red-500 p-2 bg-red-50 rounded">
+                                <div className={ `text-red-500 p-2 ${isDark ? 'bg-red-900/20' : 'bg-red-50'} rounded` }>
                                     { error }
                                 </div>
                             ) : (
@@ -160,7 +162,46 @@ export const Translator = () => {
                     </div>
                 </div>
 
-                <div className="md:col-span-2 flex justify-center items-center gap-4">
+                <div className="md:col-span-2 flex flex-wrap justify-center items-center gap-4">
+                    <div className={ `w-full flex justify-center mb-4 ${isDark ? 'text-gray-300' : 'text-gray-700'}` }>
+                        <div className="flex items-center gap-2">
+                            <div className="relative inline-flex items-center">
+                                <input
+                                    type="radio"
+                                    id="google-translate"
+                                    value="google"
+                                    checked={ translationMethod === 'google' }
+                                    onChange={ () => setTranslationMethod('google') }
+                                    className="sr-only"
+                                />
+
+
+                                <input
+                                    type="radio"
+                                    id="ai-translate"
+                                    value="ai"
+                                    checked={ translationMethod === 'ai' }
+                                    onChange={ () => setTranslationMethod('ai') }
+                                    className="sr-only"
+                                />
+                                <label
+                                    htmlFor="ai-translate"
+                                    className={ `flex items-center cursor-pointer py-2 px-4 rounded-r-md ${translationMethod === 'ai'
+                                        ? isDark
+                                            ? 'bg-purple-700 text-white'
+                                            : 'bg-purple-100 text-purple-700'
+                                        : isDark
+                                            ? 'bg-gray-600 hover:bg-gray-500'
+                                            : 'bg-gray-100 hover:bg-gray-200'
+                                        }` }
+                                >
+                                    <Bot className="w-4 h-4 mr-2" />
+                                    AI Translation
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
                     <Button
                         onClick={ swapLanguages }
                         variant="outline"

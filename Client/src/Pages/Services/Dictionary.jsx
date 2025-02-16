@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import axios from 'axios';
 import { ServiceContainer } from '../../components/ui/ServiceContainer';
-import { InputBox } from '../../components/ui/InputBox';
+import { Input } from '../../components/ui/input';
 import { motion } from 'framer-motion';
 import { BookOpen } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -96,7 +96,7 @@ export const Dictionary = () => {
           </div>
         ) }
       </div>
-      <InputBox
+      <Input
         onSubmit={ handleSearch }
         placeholder="Enter a word to look up..."
       />

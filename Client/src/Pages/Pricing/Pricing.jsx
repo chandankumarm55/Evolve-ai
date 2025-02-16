@@ -1,9 +1,10 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { toast } from 'sonner';
+import { useDispatch } from 'react-redux';
 import Navbar from '../../components/FunctionalComponents/Header';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Card, CardHeader, CardContent } from '../../components/ui/card';
-import { Sparkles, Check, X } from 'lucide-react'; // Added Check and X icons
+import { Sparkles, Check, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@clerk/clerk-react';
 import { SubscriptionUpdateUrl } from '../../Utilities/constant';
@@ -19,102 +20,111 @@ const loadRazorpay = () => {
 };
 
 const Pricing = () => {
-    const { userId: clerkUserId } = useAuth();
+    const { userId: clerkUserId, user } = useAuth();
     const { theme } = useTheme();
     const navigate = useNavigate();
+    const dispatch = useDispatch();
     const isDark = theme === 'dark';
 
     const handlePayment = async (plan) => {
-        // Validate user is signed in
         if (!clerkUserId) {
             toast.error('Please sign in to access pricing');
             navigate('/sign-in');
             return;
         }
 
-
-        const res = await loadRazorpay();
-        if (!res) {
-            toast.error('Failed to load payment gateway. Please try again.');
-            return;
-        }
-
-        const options = {
-            key: 'rzp_test_sU4uosDvBZKlyf',
-            amount: plan.price * 100,
-            currency: 'INR',
-            name: 'Evolve AI',
-            description: `${plan.name} Subscription`,
-            handler: async function (response) {
-                try {
-                    // Prepare subscription data
-                    const startDate = new Date().toISOString();
-                    const endDate = new Date(
-                        new Date().setMonth(new Date().getMonth() + 1)
-                    ).toISOString();
-
-                    const subscriptionData = {
-                        clerkId: clerkUserId,
-                        subscriptionPlan: plan.name,
-                        startDate,
-                        endDate,
-                        paymentId: response.razorpay_payment_id
-                    };
-
-                    // Send subscription update to backend
-                    const updateResponse = await fetch(SubscriptionUpdateUrl, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(subscriptionData)
-                    });
-
-                    if (!updateResponse.ok) {
-                        throw new Error('Subscription update failed');
-                    }
-
-                    const result = await updateResponse.json();
-
-                    // Show success toast with payment details
-                    toast.success('Payment Successful', {
-                        description: `Plan: ${plan.name}\nAmount: ₹${plan.price}\nPayment ID: ${response.razorpay_payment_id}`
-                    });
-
-                    // Optional: Redirect to dashboard or subscription page
-                    navigate('/dashboard');
-                } catch (error) {
-                    // Detailed error handling
-                    console.error('Subscription update error:', error);
-                    toast.error('Payment Update Failed', {
-                        description: 'Payment received, but subscription update failed. Please contact support.'
-                    });
-                }
-            },
-            prefill: {
-                name: '',
-                email: '',
-                contact: ''
-            },
-            theme: {
-                color: isDark ? '#6366f1' : '#4f46e5'
+        try {
+            const res = await loadRazorpay();
+            if (!res) {
+                toast.error('Failed to load payment gateway. Please try again.');
+                return;
             }
-        };
 
-        const paymentObject = new window.Razorpay(options);
-        paymentObject.open();
+            const options = {
+                key: 'rzp_test_sU4uosDvBZKlyf',
+                amount: plan.price * 100,
+                currency: 'INR',
+                name: 'Evolve AI',
+                description: `${plan.name} Subscription`,
+                handler: async function (response) {
+                    try {
+                        const startDate = new Date();
+                        const endDate = new Date(
+                            startDate.getFullYear(),
+                            startDate.getMonth() + 1,
+                            startDate.getDate()
+                        );
+
+                        const subscriptionData = {
+                            clerkId: clerkUserId,
+                            subscriptionPlan: plan.name,
+                            startDate,
+                            endDate,
+                            paymentId: response.razorpay_payment_id,
+                            priceAtPurchase: plan.price
+                        };
+
+                        const updateResponse = await fetch(SubscriptionUpdateUrl, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(subscriptionData)
+                        });
+
+                        if (!updateResponse.ok) {
+                            throw new Error('Subscription update failed');
+                        }
+
+                        const result = await updateResponse.json();
+
+                        // Update Redux store with new subscription data
+
+
+                        toast.success('Payment Successful', {
+                            description:
+                                `Plan: ${plan.name}\n` +
+                                `Amount: ₹${plan.price}\n` +
+                                `Valid until: ${endDate.toLocaleDateString()}\n` +
+                                `Payment ID: ${response.razorpay_payment_id}`
+                        });
+
+                        navigate('/dashboard');
+                    } catch (error) {
+                        console.error('Subscription update error:', error);
+                        toast.error('Payment Update Failed', {
+                            description: 'Payment received, but subscription update failed. Please contact support with Payment ID: ' +
+                                response.razorpay_payment_id
+                        });
+                    }
+                },
+                prefill: {
+                    name: user?.fullName || '',
+                    email: user?.primaryEmailAddress?.emailAddress || '',
+                    contact: ''
+                },
+                theme: {
+                    color: isDark ? '#6366f1' : '#4f46e5'
+                }
+            };
+
+            const paymentObject = new window.Razorpay(options);
+            paymentObject.open();
+        } catch (error) {
+            console.error('Payment initialization error:', error);
+            toast.error('Failed to initialize payment. Please try again.');
+        }
     };
 
     const plans = [
         {
-            name: 'Free AI',
+            name: 'Free',
             price: 0,
-            description: 'Explore basic AI features for free',
+            description: 'Start exploring AI features',
             features: {
-                'Translation': true,
-                'Speech-to-Text': true,
-                'Code Generation': true,
-                'Conversation': true,
+                'Conversations (10/day)': true,
+                'Dictionary Searches (5/day)': true,
+                'Audio Conversions (2/day)': true,
                 'Image Generation': false,
                 'Advanced Analytics': false,
                 'Priority Support': false,
@@ -123,15 +133,14 @@ const Pricing = () => {
             highlight: false
         },
         {
-            name: 'Starter AI',
-            price: 10,
-            description: 'Perfect for individuals exploring AI capabilities',
+            name: 'Starter',
+            price: 5,
+            description: 'Perfect for individual creators',
             features: {
-                'Translation': true,
-                'Speech-to-Text': true,
-                'Code Generation': true,
-                'Conversation': true,
-                'Image Generation': true,
+                'Conversations (50/day)': true,
+                'Dictionary Searches (20/day)': true,
+                'Audio Conversions (10/day)': true,
+                'Image Generation (5/day)': true,
                 'Advanced Analytics': false,
                 'Priority Support': false,
                 'Custom Model Fine-Tuning': false
@@ -139,15 +148,14 @@ const Pricing = () => {
             highlight: false
         },
         {
-            name: 'Pro AI',
-            price: 30,
-            description: 'Advanced AI features for growing teams',
+            name: 'Pro',
+            price: 10,
+            description: 'Advanced features for power users',
             features: {
-                'Translation': true,
-                'Speech-to-Text': true,
-                'Code Generation': true,
-                'Conversation': true,
-                'Image Generation': true,
+                'Unlimited Conversations': true,
+                'Unlimited Dictionary Searches': true,
+                'Unlimited Audio Conversions': true,
+                'Image Generation (20/day)': true,
                 'Advanced Analytics': true,
                 'Priority Support': true,
                 'Custom Model Fine-Tuning': true
@@ -168,7 +176,7 @@ const Pricing = () => {
                         </h2>
                     </div>
                     <p className={ `mt-4 text-xl ${isDark ? 'text-gray-400' : 'text-gray-600'}` }>
-                        Unlock the power of artificial intelligence with our flexible pricing plans designed to scale with your needs.
+                        Choose the perfect plan to enhance your AI experience
                     </p>
                 </div>
 
@@ -216,19 +224,21 @@ const Pricing = () => {
                                             </li>
                                         )) }
                                     </ul>
-                                    <button
-                                        onClick={ () => handlePayment(plan) }
-                                        className={ `mt-8 w-full px-6 py-3 rounded-lg text-white font-medium transition-all ${plan.highlight
-                                            ? isDark
-                                                ? 'bg-indigo-500 hover:bg-indigo-600'
-                                                : 'bg-indigo-600 hover:bg-indigo-700'
-                                            : isDark
-                                                ? 'bg-gray-700 hover:bg-gray-600'
-                                                : 'bg-gray-800 hover:bg-gray-900'
-                                            }` }
-                                    >
-                                        Get started
-                                    </button>
+                                    { plan.price > 0 && (
+                                        <button
+                                            onClick={ () => handlePayment(plan) }
+                                            className={ `mt-8 w-full px-6 py-3 rounded-lg text-white font-medium transition-all ${plan.highlight
+                                                ? isDark
+                                                    ? 'bg-indigo-500 hover:bg-indigo-600'
+                                                    : 'bg-indigo-600 hover:bg-indigo-700'
+                                                : isDark
+                                                    ? 'bg-gray-700 hover:bg-gray-600'
+                                                    : 'bg-gray-800 hover:bg-gray-900'
+                                                }` }
+                                        >
+                                            Get started
+                                        </button>
+                                    ) }
                                 </CardContent>
                             </Card>
                         </div>
