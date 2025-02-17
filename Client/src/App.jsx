@@ -26,7 +26,7 @@ import TermsAndConditions from './Pages/TermsAndConditions/TermsAndConditions';
 import PrivacyPolicy from './Pages/PrivacyPolicy/PrivacyPolicy';
 import RefundPolicy from './Pages/RefundPolicy/RefundPolicy';
 import DonatePage from './Pages/DonatePage/DonatePage';
-
+import VoiceBasedAssistant from './Pages/Services/VoiceAssistant/VoiceAssistant'
 // Clerk Publishable Key
 const PUBLISHABLE_KEY = NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
@@ -59,6 +59,7 @@ function App() {
               <Route element={ <DashboardLayout /> }>
                 <Route path="/dashboard" element={ <Dashboard /> } >
                   <Route index element={ <DashboardIndex /> } />
+
                   <Route path="conversation" element={ <Conversation /> } />
                   <Route path="image-generation" element={ <ImageGeneration /> } />
                   <Route path="speech-to-text" element={ <SpeechToText /> } />
@@ -66,6 +67,7 @@ function App() {
                   <Route path='joke-generator' element={ <JokeGenerator /> } />
                   <Route path='translator' element={ <Translator /> } />
                   <Route path='QR-Code-Generator' element={ <QRCodeGenerator /> } />
+                  <Route path="Voice-Based-Assistant" element={ <VoiceBasedAssistant /> } />
                   <Route path='dictionary' element={ <Dictionary /> } />
                 </Route>
               </Route>

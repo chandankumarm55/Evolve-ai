@@ -41,7 +41,7 @@ const Pricing = () => {
             }
 
             const options = {
-                key: 'rzp_test_sU4uosDvBZKlyf',
+                key: import.meta.env.VITE_RAZORPAY_KEY,
                 amount: plan.price * 100,
                 currency: 'INR',
                 name: 'Evolve AI',
