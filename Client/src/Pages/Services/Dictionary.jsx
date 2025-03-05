@@ -3,16 +3,24 @@ import axios from 'axios';
 import { ServiceContainer } from '../../components/ui/ServiceContainer';
 import { Input } from '../../components/ui/input';
 import { motion } from 'framer-motion';
-import { BookOpen } from 'lucide-react';
+import { BookOpen, Send } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { toast, Toaster } from 'sonner';
 
 export const Dictionary = () => {
+  const [searchTerm, setSearchTerm] = useState('');
   const [searchHistory, setSearchHistory] = useState([]);
   const { theme } = useTheme();
   const isDark = theme === 'dark';
 
-  const handleSearch = async (word) => {
+  const handleSearch = async () => {
+    // Trim the search term and check if it's not empty
+    const word = searchTerm.trim();
+    if (!word) {
+      toast.error('Please enter a word');
+      return;
+    }
+
     try {
       const response = await axios.get(
         `https://api.dictionaryapi.dev/api/v2/entries/en_US/${word}`
@@ -31,6 +39,7 @@ export const Dictionary = () => {
       };
 
       setSearchHistory((prev) => [fetchedDefinition, ...prev]);
+      setSearchTerm(''); // Clear the input after successful search
     } catch (error) {
       toast.error('Word not found');
       console.error(error);
@@ -38,7 +47,7 @@ export const Dictionary = () => {
   };
 
   return (
-    <ServiceContainer title="AI Dictionary">
+    <ServiceContainer >
       <Toaster />
       <div className="flex-1 overflow-y-auto space-y-4 mb-4">
         { searchHistory.map((entry, index) => (
@@ -96,10 +105,31 @@ export const Dictionary = () => {
           </div>
         ) }
       </div>
-      <Input
-        onSubmit={ handleSearch }
-        placeholder="Enter a word to look up..."
-      />
+
+      <div className="flex items-center space-x-2">
+        <Input
+          value={ searchTerm }
+          onChange={ (e) => setSearchTerm(e.target.value) }
+          onKeyDown={ (e) => {
+            if (e.key === 'Enter') {
+              handleSearch();
+            }
+          } }
+          placeholder="Enter a word to look up..."
+          className="flex-1"
+        />
+        <button
+          onClick={ handleSearch }
+          className={ `
+            p-2 rounded-lg 
+            ${isDark
+              ? 'bg-purple-600 hover:bg-purple-700 text-white'
+              : 'bg-purple-500 hover:bg-purple-600 text-white'}
+          `}
+        >
+          <Send size={ 20 } />
+        </button>
+      </div>
     </ServiceContainer>
   );
 };

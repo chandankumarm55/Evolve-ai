@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ClerkProvider } from '@clerk/clerk-react';
-import { ThemeProvider } from './contexts/ThemeContext';
+import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import LandingPage from './Pages/LandingPage/LandingPage';
 import Home from './Pages/Home/Home';
 import DashboardLayout from './components/ClearkComponents/DashboardLayout';
@@ -27,6 +27,8 @@ import PrivacyPolicy from './Pages/PrivacyPolicy/PrivacyPolicy';
 import RefundPolicy from './Pages/RefundPolicy/RefundPolicy';
 import DonatePage from './Pages/DonatePage/DonatePage';
 import VoiceBasedAssistant from './Pages/Services/VoiceAssistant/VoiceAssistant'
+import { dark } from '@clerk/themes';
+
 // Clerk Publishable Key
 const PUBLISHABLE_KEY = NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
@@ -34,16 +36,12 @@ if (!PUBLISHABLE_KEY) {
   throw new Error('Missing Clerk Publishable Key');
 }
 
-
-
-
 function App() {
   return (
-    <ClerkProvider publishableKey={ PUBLISHABLE_KEY }>
-      <ThemeProvider>
+    <ThemeProvider>
+      <ClerkThemeWrapper>
         <BrowserRouter>
           <div className="app-container">
-
             <Routes>
               <Route path="/" element={ <Home /> } />
               <Route path='/sign-up/*' element={ <SignUp /> } />
@@ -54,12 +52,10 @@ function App() {
                 <Route path='/privacy-policy' element={ <PrivacyPolicy /> } />
                 <Route element={ <Pricing /> } path='/pricing' />
                 <Route element={ <RefundPolicy /> } path='/refund-policy' />
-
               </Route>
               <Route element={ <DashboardLayout /> }>
                 <Route path="/dashboard" element={ <Dashboard /> } >
                   <Route index element={ <DashboardIndex /> } />
-
                   <Route path="conversation" element={ <Conversation /> } />
                   <Route path="image-generation" element={ <ImageGeneration /> } />
                   <Route path="speech-to-text" element={ <SpeechToText /> } />
@@ -72,10 +68,32 @@ function App() {
                 </Route>
               </Route>
             </Routes>
-
           </div>
         </BrowserRouter>
-      </ThemeProvider>
+      </ClerkThemeWrapper>
+    </ThemeProvider>
+  );
+}
+
+// Separate component to handle Clerk theme
+function ClerkThemeWrapper({ children }) {
+  const { theme } = useTheme();
+
+  return (
+    <ClerkProvider
+      publishableKey={ PUBLISHABLE_KEY }
+      appearance={ {
+        baseTheme: theme === 'dark' ? dark : undefined,
+        variables: {
+          colorPrimary: theme === 'dark' ? '#ffffff' : '#000000',
+        },
+        elements: {
+          formButtonPrimary: 'bg-primary text-primary-foreground hover:bg-primary/90',
+          card: `bg-${theme === 'dark' ? 'background/80' : 'background'}`,
+        }
+      } }
+    >
+      { children }
     </ClerkProvider>
   );
 }
