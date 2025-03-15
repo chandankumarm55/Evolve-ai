@@ -56,7 +56,7 @@ export const Dashboard = () => {
             } catch (error) {
                 console.error('Error in user initialization:', error);
                 alert(error.message);
-                navigate('/login');
+                navigate('/sing-in');
             }
         };
 

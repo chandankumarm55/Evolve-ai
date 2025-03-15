@@ -28,6 +28,7 @@ import RefundPolicy from './Pages/RefundPolicy/RefundPolicy';
 import DonatePage from './Pages/DonatePage/DonatePage';
 import VoiceBasedAssistant from './Pages/Services/VoiceAssistant/VoiceAssistant'
 import { dark } from '@clerk/themes';
+import CodeGenrator from './Pages/Services/CodeGenrator/CodeGenrator';
 
 // Clerk Publishable Key
 const PUBLISHABLE_KEY = NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
@@ -65,6 +66,7 @@ function App() {
                   <Route path='QR-Code-Generator' element={ <QRCodeGenerator /> } />
                   <Route path="Voice-Based-Assistant" element={ <VoiceBasedAssistant /> } />
                   <Route path='dictionary' element={ <Dictionary /> } />
+                  <Route path='codegenerator' element={ <CodeGenrator /> } />
                 </Route>
               </Route>
             </Routes>

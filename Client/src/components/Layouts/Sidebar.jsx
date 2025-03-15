@@ -11,14 +11,17 @@ import {
     Languages,
     BookOpen,
     Speech,
-    QrCode
+    QrCode,
+    AudioLines
 } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
+
 
 const menuItems = [
     { icon: Home, label: 'Dashboard', path: '/dashboard' },
     { icon: MessageSquare, label: 'Conversation', path: '/dashboard/conversation' },
     { icon: Image, label: 'Image Generation', path: '/dashboard/image-generation' },
+    { icon: AudioLines, label: 'Voice Based Assistant', path: '/dashboard/Voice-Based-Assistant' },
     { icon: Mic, label: 'Text to Speech', path: '/dashboard/text-to-speech' },
     { icon: Smile, label: 'Joke Generator', path: '/dashboard/joke-generator' },
     { icon: Languages, label: 'Translator', path: '/dashboard/translator' },
@@ -38,7 +41,7 @@ export const Sidebar = ({ onClose }) => {
     const navigate = useNavigate();
 
     return (
-        <div className={ `w-64 h-screen ${isDark ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-200'
+        <div className={ `w-64 h-screen  overflow-y-auto  ${isDark ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-200'
             } border-r p-4` }>
             <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-2 cursor-pointer" onClick={ () => navigate('/') }>
