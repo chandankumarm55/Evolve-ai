@@ -28,7 +28,9 @@ import RefundPolicy from './Pages/RefundPolicy/RefundPolicy';
 import DonatePage from './Pages/DonatePage/DonatePage';
 import VoiceBasedAssistant from './Pages/Services/VoiceAssistant/VoiceAssistant'
 import { dark } from '@clerk/themes';
-import CodeGenrator from './Pages/Services/CodeGenrator/CodeGenrator';
+import CodeIndex from './Pages/Services/CodeGenrator/IndexCodeGenerator';
+import ReactCodeGenerator from "./Pages/Services/CodeGenrator/ReactCodeGenerator/ReactCodeGenerator";
+import ProtectedFullWidthLayout from './components/Layouts/ProtectedFullLayout ';
 
 // Clerk Publishable Key
 const PUBLISHABLE_KEY = NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
@@ -54,8 +56,10 @@ function App() {
                 <Route element={ <Pricing /> } path='/pricing' />
                 <Route element={ <RefundPolicy /> } path='/refund-policy' />
               </Route>
+
+              {/* Regular dashboard routes with sidebar */ }
               <Route element={ <DashboardLayout /> }>
-                <Route path="/dashboard" element={ <Dashboard /> } >
+                <Route path="/dashboard" element={ <Dashboard /> }>
                   <Route index element={ <DashboardIndex /> } />
                   <Route path="conversation" element={ <Conversation /> } />
                   <Route path="image-generation" element={ <ImageGeneration /> } />
@@ -66,10 +70,16 @@ function App() {
                   <Route path='QR-Code-Generator' element={ <QRCodeGenerator /> } />
                   <Route path="Voice-Based-Assistant" element={ <VoiceBasedAssistant /> } />
                   <Route path='dictionary' element={ <Dictionary /> } />
-                  <Route path='codegenerator' element={ <CodeGenrator /> } />
+                  <Route path='codegenerator' element={ <CodeIndex /> } />
                 </Route>
               </Route>
+
+              {/* Protected full-width routes (no sidebar) */ }
+              <Route element={ <ProtectedFullWidthLayout /> }>
+                <Route path='/dashboard/codegenerator/react' element={ <ReactCodeGenerator /> } />
+              </Route>
             </Routes>
+            <Toaster />
           </div>
         </BrowserRouter>
       </ClerkThemeWrapper>
