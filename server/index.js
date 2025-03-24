@@ -1,3 +1,4 @@
+// index.js
 import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
@@ -5,6 +6,7 @@ import { connectDB } from './middlewares/db.js';
 import userroutes from './routers/userroutes.js';
 import usageroutes from './routers/usageroute.js';
 import subscriptionroutes from './routers/subscriptionrouters.js';
+import codewriterRoutes from './routers/codeWriterRoutes.js';
 
 // Load environment variables
 dotenv.config();
@@ -56,6 +58,7 @@ try {
 app.use('/api/user', userroutes);
 app.use('/api/usage', usageroutes);
 app.use('/api/subscription', subscriptionroutes);
+app.use('/api/codewriter', codewriterRoutes); // Fixed route to use codewriterRoutes
 
 // Root route
 app.get('/', (req, res) => {
