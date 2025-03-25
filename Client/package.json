@@ -13,6 +13,7 @@
         "@clerk/clerk-react": "^5.21.0",
         "@clerk/themes": "^2.2.20",
         "@huggingface/transformers": "^3.3.3",
+        "@monaco-editor/react": "^4.7.0",
         "@radix-ui/react-label": "^2.1.1",
         "@radix-ui/react-scroll-area": "^1.2.2",
         "@radix-ui/react-select": "^2.1.4",
@@ -28,8 +29,10 @@
         "clsx": "^2.1.1",
         "framer-motion": "^11.18.1",
         "free-translate": "^0.6.1",
+        "jszip": "^3.10.1",
         "llamaai": "^1.0.4",
         "lucide-react": "^0.469.0",
+        "monaco-editor": "^0.52.2",
         "prism-react-renderer": "^2.4.1",
         "prismjs": "^1.29.0",
         "qrcode.react": "^4.2.0",
@@ -53,7 +56,8 @@
         "tailwindcss-animate": "^1.0.7",
         "three": "^0.171.0",
         "tsparticles": "^3.7.1",
-        "tsparticles-slim": "^2.12.0"
+        "tsparticles-slim": "^2.12.0",
+        "webcontainer": "^0.0.1"
     },
     "devDependencies": {
         "@eslint/js": "^8.56.0",

@@ -31,6 +31,7 @@ import { dark } from '@clerk/themes';
 import CodeIndex from './Pages/Services/CodeGenrator/IndexCodeGenerator';
 import ReactCodeGenerator from "./Pages/Services/CodeGenrator/ReactCodeGenerator/ReactCodeGenerator";
 import ProtectedFullWidthLayout from './components/Layouts/ProtectedFullLayout ';
+import { Builder } from './Pages/Services/CodeGenrator/ReactCodeGenerator/Builder';
 
 // Clerk Publishable Key
 const PUBLISHABLE_KEY = NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
@@ -76,6 +77,7 @@ function App() {
 
               {/* Protected full-width routes (no sidebar) */ }
               <Route element={ <ProtectedFullWidthLayout /> }>
+                <Route path='/builder' element={ <Builder /> } />
                 <Route path='/dashboard/codegenerator/react' element={ <ReactCodeGenerator /> } />
               </Route>
             </Routes>

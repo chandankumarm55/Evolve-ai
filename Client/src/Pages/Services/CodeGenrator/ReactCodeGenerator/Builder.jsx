@@ -1,200 +1,141 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { StepsList } from '../components/StepsList';
-import { FileExplorer } from '../components/FileExplorer';
-import { TabView } from '../components/TabView';
-import { CodeEditor } from '../components/CodeEditor';
-import { PreviewFrame } from '../components/PreviewFrame';
-import { Step, FileItem, StepType } from '../types';
+import StepsList from './StepsList';
+import { FileExplorer } from './FileExplorer';
+import { TabView } from './TabView';
+import { CodeEditor } from './CodeEditor';
 import axios from 'axios';
-import { BACKEND_URL } from '../config';
-import { parseXml } from '../steps';
-import { useWebContainer } from '../hooks/useWebContainer';
-import { FileNode } from '@webcontainer/api';
-import { Loader } from '../components/Loader';
+import { CodeWritingUrl } from '../../../../Utilities/constant';
+import { parseXml } from './steps';
+import { Loader } from './Loader';
 
-const MOCK_FILE_CONTENT = `// This is a sample file content
-import React from 'react';
-
-function Component() {
-  return <div>Hello World</div>;
-}
-
-export default Component;`;
-
-export function Builder() {
+export const Builder = () => {
     const location = useLocation();
-    const { prompt } = location.state as { prompt: string };
+    const { prompt } = location.state || {}; // Add default empty object to prevent undefined error
+
     const [userPrompt, setPrompt] = useState("");
-    const [llmMessages, setLlmMessages] = useState < { role: "user" | "assistant", content: string; }[] > ([]);
+    const [llmMessages, setLlmMessages] = useState([]);
     const [loading, setLoading] = useState(false);
     const [templateSet, setTemplateSet] = useState(false);
-    const webcontainer = useWebContainer();
 
     const [currentStep, setCurrentStep] = useState(1);
-    const [activeTab, setActiveTab] = useState < 'code' | 'preview' > ('code');
-    const [selectedFile, setSelectedFile] = useState < FileItem | null > (null);
+    const [activeTab, setActiveTab] = useState('code');
+    const [selectedFile, setSelectedFile] = useState(null);
 
-    const [steps, setSteps] = useState < Step[] > ([]);
-
-    const [files, setFiles] = useState < FileItem[] > ([]);
+    const [steps, setSteps] = useState([]);
+    const [files, setFiles] = useState([]);
 
     useEffect(() => {
         let originalFiles = [...files];
         let updateHappened = false;
-        steps.filter(({ status }) => status === "pending").map(step => {
+        steps.filter(({ status }) => status === "pending").forEach(step => {
             updateHappened = true;
-            if (step?.type === StepType.CreateFile) {
-                let parsedPath = step.path?.split("/") ?? []; // ["src", "components", "App.tsx"]
-                let currentFileStructure = [...originalFiles]; // {}
+            if (step?.type === "CreateFile") {
+                let parsedPath = step.path?.split("/") ?? [];
+                let currentFileStructure = [...originalFiles];
                 let finalAnswerRef = currentFileStructure;
 
-                let currentFolder = ""
+                let currentFolder = "";
                 while (parsedPath.length) {
                     currentFolder = `${currentFolder}/${parsedPath[0]}`;
                     let currentFolderName = parsedPath[0];
                     parsedPath = parsedPath.slice(1);
 
                     if (!parsedPath.length) {
-                        // final file
-                        let file = currentFileStructure.find(x => x.path === currentFolder)
+                        let file = currentFileStructure.find(x => x.path === currentFolder);
                         if (!file) {
                             currentFileStructure.push({
                                 name: currentFolderName,
                                 type: 'file',
                                 path: currentFolder,
                                 content: step.code
-                            })
+                            });
                         } else {
                             file.content = step.code;
                         }
                     } else {
-                        /// in a folder
-                        let folder = currentFileStructure.find(x => x.path === currentFolder)
+                        let folder = currentFileStructure.find(x => x.path === currentFolder);
                         if (!folder) {
-                            // create the folder
                             currentFileStructure.push({
                                 name: currentFolderName,
                                 type: 'folder',
                                 path: currentFolder,
                                 children: []
-                            })
+                            });
                         }
 
-                        currentFileStructure = currentFileStructure.find(x => x.path === currentFolder)!.children!;
+                        currentFileStructure = currentFileStructure.find(x => x.path === currentFolder).children;
                     }
                 }
                 originalFiles = finalAnswerRef;
             }
-
-        })
+        });
 
         if (updateHappened) {
-
-            setFiles(originalFiles)
-            setSteps(steps => steps.map((s: Step) => {
-                return {
-                    ...s,
-                    status: "completed"
-                }
-
-            }))
+            setFiles(originalFiles);
+            setSteps(steps => steps.map(s => ({
+                ...s,
+                status: "completed"
+            })));
         }
-        console.log(files);
     }, [steps, files]);
 
-    useEffect(() => {
-        const createMountStructure = (files: FileItem[]): Record<string, any> => {
-            const mountStructure: Record<string, any> = {};
-
-            const processFile = (file: FileItem, isRootFolder: boolean) => {
-                if (file.type === 'folder') {
-                    // For folders, create a directory entry
-                    mountStructure[file.name] = {
-                        directory: file.children ?
-                            Object.fromEntries(
-                                file.children.map(child => [child.name, processFile(child, false)])
-                            )
-                            : {}
-                    };
-                } else if (file.type === 'file') {
-                    if (isRootFolder) {
-                        mountStructure[file.name] = {
-                            file: {
-                                contents: file.content || ''
-                            }
-                        };
-                    } else {
-                        // For files, create a file entry with contents
-                        return {
-                            file: {
-                                contents: file.content || ''
-                            }
-                        };
-                    }
-                }
-
-                return mountStructure[file.name];
-            };
-
-            // Process each top-level file/folder
-            files.forEach(file => processFile(file, true));
-
-            return mountStructure;
-        };
-
-        const mountStructure = createMountStructure(files);
-
-        // Mount the structure if WebContainer is available
-        console.log(mountStructure);
-        webcontainer?.mount(mountStructure);
-    }, [files, webcontainer]);
-
     async function init() {
-        const response = await axios.post(`${BACKEND_URL}/template`, {
-            prompt: prompt.trim()
-        });
-        setTemplateSet(true);
+        // Check if prompt exists before using it
+        if (!prompt) {
+            console.error('No prompt provided');
+            return;
+        }
 
-        const { prompts, uiPrompts } = response.data;
+        try {
+            const response = await axios.post(`${CodeWritingUrl}/template`, {
+                prompt: prompt.trim() // Add null check or provide a default
+            });
+            setTemplateSet(true);
 
-        setSteps(parseXml(uiPrompts[0]).map((x: Step) => ({
-            ...x,
-            status: "pending"
-        })));
+            const { prompts, uiPrompts } = response.data;
 
-        setLoading(true);
-        const stepsResponse = await axios.post(`${BACKEND_URL}/chat`, {
-            messages: [...prompts, prompt].map(content => ({
+            setSteps(parseXml(uiPrompts[0]).map(x => ({
+                ...x,
+                status: "pending"
+            })));
+
+            setLoading(true);
+            const stepsResponse = await axios.post(`${CodeWritingUrl}/chat`, {
+                messages: [...prompts, prompt].map(content => ({
+                    role: "user",
+                    content
+                }))
+            });
+
+            setLoading(false);
+
+            setSteps(s => [...s, ...parseXml(stepsResponse.data.response).map(x => ({
+                ...x,
+                status: "pending"
+            }))]);
+
+            setLlmMessages([...prompts, prompt].map(content => ({
                 role: "user",
                 content
-            }))
-        })
+            })));
 
-        setLoading(false);
-
-        setSteps(s => [...s, ...parseXml(stepsResponse.data.response).map(x => ({
-            ...x,
-            status: "pending" as "pending"
-        }))]);
-
-        setLlmMessages([...prompts, prompt].map(content => ({
-            role: "user",
-            content
-        })));
-
-        setLlmMessages(x => [...x, { role: "assistant", content: stepsResponse.data.response }])
+            setLlmMessages(x => [...x, { role: "assistant", content: stepsResponse.data.response }]);
+        } catch (error) {
+            console.error('Error in init function:', error);
+            setLoading(false);
+        }
     }
 
     useEffect(() => {
         init();
-    }, [])
+    }, [prompt]); // Add prompt as a dependency
 
     return (
         <div className="min-h-screen bg-gray-900 flex flex-col">
             <header className="bg-gray-800 border-b border-gray-700 px-6 py-4">
                 <h1 className="text-xl font-semibold text-gray-100">Website Builder</h1>
-                <p className="text-sm text-gray-400 mt-1">Prompt: { prompt }</p>
+                <p className="text-sm text-gray-400 mt-1">Prompt: { prompt || 'No prompt provided' }</p>
             </header>
 
             <div className="flex-1 overflow-hidden">
@@ -212,35 +153,45 @@ export function Builder() {
                                 <div className='flex'>
                                     <br />
                                     { (loading || !templateSet) && <Loader /> }
-                                    { !(loading || !templateSet) && <div className='flex'>
-                                        <textarea value={ userPrompt } onChange={ (e) => {
-                                            setPrompt(e.target.value)
-                                        } } className='p-2 w-full'></textarea>
-                                        <button onClick={ async () => {
-                                            const newMessage = {
-                                                role: "user" as "user",
-                                                content: userPrompt
-                                            };
+                                    { !(loading || !templateSet) && (
+                                        <div className='flex'>
+                                            <textarea
+                                                value={ userPrompt }
+                                                onChange={ (e) => {
+                                                    setPrompt(e.target.value);
+                                                } }
+                                                className='p-2 w-full'
+                                            />
+                                            <button
+                                                onClick={ async () => {
+                                                    const newMessage = {
+                                                        role: "user",
+                                                        content: userPrompt
+                                                    };
 
-                                            setLoading(true);
-                                            const stepsResponse = await axios.post(`${BACKEND_URL}/chat`, {
-                                                messages: [...llmMessages, newMessage]
-                                            });
-                                            setLoading(false);
+                                                    setLoading(true);
+                                                    const stepsResponse = await axios.post(`${CodeWritingUrl}/chat`, {
+                                                        messages: [...llmMessages, newMessage]
+                                                    });
+                                                    setLoading(false);
 
-                                            setLlmMessages(x => [...x, newMessage]);
-                                            setLlmMessages(x => [...x, {
-                                                role: "assistant",
-                                                content: stepsResponse.data.response
-                                            }]);
+                                                    setLlmMessages(x => [...x, newMessage]);
+                                                    setLlmMessages(x => [...x, {
+                                                        role: "assistant",
+                                                        content: stepsResponse.data.response
+                                                    }]);
 
-                                            setSteps(s => [...s, ...parseXml(stepsResponse.data.response).map(x => ({
-                                                ...x,
-                                                status: "pending" as "pending"
-                                            }))]);
-
-                                        } } className='bg-purple-400 px-4'>Send</button>
-                                    </div> }
+                                                    setSteps(s => [...s, ...parseXml(stepsResponse.data.response).map(x => ({
+                                                        ...x,
+                                                        status: "pending"
+                                                    }))]);
+                                                } }
+                                                className='bg-purple-400 px-4'
+                                            >
+                                                Send
+                                            </button>
+                                        </div>
+                                    ) }
                                 </div>
                             </div>
                         </div>
@@ -252,12 +203,15 @@ export function Builder() {
                         />
                     </div>
                     <div className="col-span-2 bg-gray-900 rounded-lg shadow-lg p-4 h-[calc(100vh-8rem)]">
-                        <TabView activeTab={ activeTab } onTabChange={ setActiveTab } />
+                        <TabView
+                            activeTab={ activeTab }
+                            onTabChange={ setActiveTab }
+                        />
                         <div className="h-[calc(100%-4rem)]">
                             { activeTab === 'code' ? (
                                 <CodeEditor file={ selectedFile } />
                             ) : (
-                                <PreviewFrame webContainer={ webcontainer } files={ files } />
+                                <h1>Hello</h1>
                             ) }
                         </div>
                     </div>
@@ -265,4 +219,4 @@ export function Builder() {
             </div>
         </div>
     );
-}
+};
