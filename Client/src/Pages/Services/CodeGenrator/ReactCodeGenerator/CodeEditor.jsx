@@ -13,16 +13,34 @@ export function CodeEditor({ file }) {
     return (
         <Editor
             height="100%"
-            defaultLanguage="typescript"
-            theme="vs-dark"
+            language={ getLanguageFromExtension(file.name) }
             value={ file.content || '' }
             options={ {
                 readOnly: true,
-                minimap: { enabled: false },
-                fontSize: 14,
-                wordWrap: 'on',
-                scrollBeyondLastLine: false,
+                minimap: { enabled: false }
             } }
         />
     );
+}
+
+function getLanguageFromExtension(fileName) {
+    const extension = fileName.split('.').pop()?.toLowerCase();
+    switch (extension) {
+        case 'js':
+        case 'jsx':
+            return 'javascript';
+        case 'ts':
+        case 'tsx':
+            return 'typescript';
+        case 'html':
+            return 'html';
+        case 'css':
+            return 'css';
+        case 'json':
+            return 'json';
+        case 'md':
+            return 'markdown';
+        default:
+            return 'plaintext';
+    }
 }

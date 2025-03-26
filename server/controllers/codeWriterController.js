@@ -1,6 +1,3 @@
-//React Code Writer
-
-// codeWriterController.js
 import dotenv from 'dotenv';
 import axios from 'axios';
 import { BASE_PROMPT, getSystemPrompt, CONTINUE_PROMPT } from '../utils/prompts.js';
@@ -9,8 +6,8 @@ import { basePrompt as reactBasePrompt } from '../defaults/react.js';
 dotenv.config();
 
 // OpenAI API URL and key (you should move this to .env file)
-const AI_API_URL = process.env.AI_API_URL || "https://api.openai.com/v1/chat/completions";
-const AI_API_KEY = process.env.AI_API_KEY;
+const AI_API_URL = "https://api.mistral.ai/v1/chat/completions";
+const AI_API_KEY = 'Dqa6NVB3wtarl5hNrI9tsbSt97GW0BGe';
 
 // Define AI system prompt
 const REACT_AI_SYSTEM_PROMPT = `You are React Expert, an AI assistant and exceptional senior React developer with vast knowledge of React, JavaScript, TypeScript, and modern frontend development best practices.`;
@@ -25,7 +22,7 @@ const generateAIResponse = async(messages, maxTokens = 12000, systemPrompt = REA
 
         const response = await axios.post(
             AI_API_URL, {
-                model: process.env.AI_MODEL || 'gpt-4-turbo', // Use your preferred model
+                model: 'mistral-medium', // Updated model name
                 messages: formattedMessages,
                 temperature: 0.7,
                 max_tokens: maxTokens,
@@ -38,14 +35,41 @@ const generateAIResponse = async(messages, maxTokens = 12000, systemPrompt = REA
             }
         );
 
+        // Detailed logging
+        console.log('API Response:', response.data);
+
+        // Additional check for response structure
+        if (!response.data || !response.data.choices || !response.data.choices[0]) {
+            throw new Error('Unexpected API response structure');
+        }
+
         return response.data.choices[0].message.content;
     } catch (error) {
-        console.error('Error generating AI response:', error.response.data || error.message);
-        throw new Error('Failed to generate AI response');
+        // More comprehensive error logging
+        console.error('Full error object:', error);
+
+        // Check if it's an axios error with response
+        if (error.response) {
+            console.error('Error response data:', error.response.data);
+            console.error('Error response status:', error.response.status);
+            console.error('Error response headers:', error.response.headers);
+
+            throw new Error(`API Error: ${error.response.data.message || 'Unknown error'}`);
+        }
+        // Check for network or other errors
+        else if (error.request) {
+            console.error('No response received:', error.request);
+            throw new Error('No response received from the server');
+        }
+        // Other errors
+        else {
+            console.error('Error setting up request:', error.message);
+            throw new Error(`Request setup error: ${error.message}`);
+        }
     }
 };
 
-// Controller functions
+// Controller functions remain the same
 export const getTemplate = async(req, res) => {
     try {
         const prompt = req.body.prompt;
@@ -69,26 +93,29 @@ export const generateChat = async(req, res) => {
         const { messages } = req.body;
 
         if (!messages || !Array.isArray(messages) || messages.length === 0) {
-            return res.status(400).json({ error: "Valid messages array is required" });
+            return res.status(400).json({
+                error: "Valid messages array is required",
+                details: "Messages should be an array of message objects"
+            });
         }
 
-        // Check if the user has enough credits/usage available (you can implement this)
-        // const hasCredits = await checkUserCredits(req.user.id);
-        // if (!hasCredits) {
-        //     return res.status(403).json({ error: "Insufficient credits" });
-        // }
-
-        const response = await generateAIResponse(messages, 8000, getSystemPrompt());
-
-        // Update user usage/credits (you can implement this)
-        // await updateUserUsage(req.user.id);
+        const response = await generateAIResponse(messages, 12000, getSystemPrompt());
 
         res.json({
-            response: response
+            response: response,
+            rawContent: response // Optional: send raw content for debugging
         });
     } catch (error) {
-        console.error("Chat endpoint error:", error);
-        res.status(500).json({ error: "Failed to process chat request" });
+        console.error("Comprehensive Chat Endpoint Error:", {
+            message: error.message,
+            stack: error.stack
+        });
+
+        res.status(500).json({
+            error: "Failed to process chat request",
+            details: error.message,
+            stack: process.env.NODE_ENV !== 'production' ? error.stack : undefined
+        });
     }
 };
 
@@ -106,14 +133,14 @@ export const continueChat = async(req, res) => {
             { role: 'user', content: CONTINUE_PROMPT }
         ];
 
-        const response = await generateAIResponse(messagesWithContinue, 8000, getSystemPrompt());
+        const response = await generateAIResponse(messagesWithContinue, 12000, getSystemPrompt());
 
         res.json({
             response: response
         });
     } catch (error) {
         console.error("Continue chat endpoint error:", error);
-        res.status(500).json({ error: "Failed to process continue request" });
+        res.status(500).json({ error: error.message || "Failed to process continue request" });
     }
 };
 

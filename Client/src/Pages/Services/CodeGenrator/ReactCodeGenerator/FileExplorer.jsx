@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { FolderTree, File, ChevronRight, ChevronDown } from 'lucide-react';
 
-function FileNode({ item, depth, onFileClick }) {
+function FileNode({ item, depth = 0, onFileClick }) {
     const [isExpanded, setIsExpanded] = useState(false);
 
     const handleClick = () => {
@@ -13,33 +13,29 @@ function FileNode({ item, depth, onFileClick }) {
     };
 
     return (
-        <div className="select-none">
-            <div
-                className="flex items-center gap-2 p-2 hover:bg-gray-800 rounded-md cursor-pointer"
-                style={ { paddingLeft: `${depth * 1.5}rem` } }
-                onClick={ handleClick }
-            >
+        <div
+            className={ `cursor-pointer hover:bg-gray-700 ${item.type === 'file' ? 'pl-4' : ''}` }
+            style={ { paddingLeft: `${depth * 16}px` } }
+            onClick={ handleClick }
+        >
+            <div className="flex items-center">
                 { item.type === 'folder' && (
-                    <span className="text-gray-400">
-                        { isExpanded ? (
-                            <ChevronDown className="w-4 h-4" />
-                        ) : (
-                            <ChevronRight className="w-4 h-4" />
-                        ) }
-                    </span>
+                    item.children?.length > 0 ? (
+                        isExpanded ? <ChevronDown size={ 16 } /> : <ChevronRight size={ 16 } />
+                    ) : null
                 ) }
                 { item.type === 'folder' ? (
-                    <FolderTree className="w-4 h-4 text-blue-400" />
+                    <FolderTree size={ 16 } className="mr-2" />
                 ) : (
-                    <File className="w-4 h-4 text-gray-400" />
+                    <File size={ 16 } className="mr-2" />
                 ) }
-                <span className="text-gray-200">{ item.name }</span>
+                { item.name }
             </div>
             { item.type === 'folder' && isExpanded && item.children && (
                 <div>
                     { item.children.map((child, index) => (
                         <FileNode
-                            key={ `${child.path}-${index}` }
+                            key={ child.path || index }
                             item={ child }
                             depth={ depth + 1 }
                             onFileClick={ onFileClick }
@@ -53,17 +49,15 @@ function FileNode({ item, depth, onFileClick }) {
 
 export function FileExplorer({ files, onFileSelect }) {
     return (
-        <div className="bg-gray-900 rounded-lg shadow-lg p-4 h-full overflow-auto">
-            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-gray-100">
-                <FolderTree className="w-5 h-5" />
+        <div className="bg-gray-800 text-gray-200 p-4 rounded-lg">
+            <div className="font-bold mb-4">
                 File Explorer
-            </h2>
-            <div className="space-y-1">
+            </div>
+            <div className="space-y-2">
                 { files.map((file, index) => (
                     <FileNode
-                        key={ `${file.path}-${index}` }
+                        key={ file.path || index }
                         item={ file }
-                        depth={ 0 }
                         onFileClick={ onFileSelect }
                     />
                 )) }
