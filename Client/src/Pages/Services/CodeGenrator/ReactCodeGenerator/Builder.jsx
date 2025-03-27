@@ -5,7 +5,7 @@ import JSZip from 'jszip';
 import axios from 'axios';
 import { Download } from 'lucide-react';
 
-// Import your custom components
+// Import custom components
 import StepsList from './StepsList';
 import { FileExplorer } from './FileExplorer';
 import { TabView } from './TabView';
@@ -13,9 +13,58 @@ import { CodeEditor } from './CodeEditor';
 import { FileViewer } from './FileViewer';
 import { Loader } from './Loader';
 
-// Import your utilities
+// Import utilities
 import { CodeWritingUrl } from '../../../../Utilities/constant';
 import { parseXml } from './steps';
+
+// Utility function to parse response into files
+const parseResponseToFiles = (response) => {
+    const parser = new DOMParser();
+    const xmlDoc = parser.parseFromString(response, 'text/xml');
+
+    const fileNodes = xmlDoc.querySelectorAll('boltAction[type="file"]');
+    const parsedFiles = [];
+
+    fileNodes.forEach(fileNode => {
+        const filePath = fileNode.getAttribute('filePath') || '';
+        const content = fileNode.textContent || '';
+
+        const pathParts = filePath.split('/');
+        const fileName = pathParts[pathParts.length - 1];
+
+        const fileObj = {
+            name: fileName,
+            type: 'file',
+            path: filePath,
+            content: content
+        };
+
+        let currentLevel = parsedFiles;
+        for (let i = 0; i < pathParts.length - 1; i++) {
+            const folderName = pathParts[i];
+            const existingFolder = currentLevel.find(
+                item => item.name === folderName && item.type === 'folder'
+            );
+
+            if (existingFolder) {
+                currentLevel = existingFolder.children || [];
+            } else {
+                const newFolder = {
+                    name: folderName,
+                    type: 'folder',
+                    path: pathParts.slice(0, i + 1).join('/'),
+                    children: []
+                };
+                currentLevel.push(newFolder);
+                currentLevel = newFolder.children || [];
+            }
+        }
+
+        currentLevel.push(fileObj);
+    });
+
+    return parsedFiles;
+};
 
 export const Builder = () => {
     const location = useLocation();
@@ -36,8 +85,6 @@ export const Builder = () => {
     const [files, setFiles] = useState([]);
 
     // File structure update effect
-
-
     useEffect(() => {
         let originalFiles = [...files];
         let updateHappened = false;
@@ -78,7 +125,7 @@ export const Builder = () => {
                             });
                         }
 
-                        currentFileStructure = currentFileStructure.find(x => x.path === currentFolder).children;
+                        currentFileStructure = currentFileStructure.find(x => x.path === currentFolder)?.children || [];
                     }
                 }
                 originalFiles = finalAnswerRef;
@@ -95,7 +142,7 @@ export const Builder = () => {
     }, [steps]);
 
     // Initialize project generation
-    async function init() {
+    const init = async () => {
         if (!prompt) {
             console.error('No prompt provided');
             return;
@@ -124,6 +171,21 @@ export const Builder = () => {
 
             setLoading(false);
 
+            // Parse files from the response
+            const newFiles = parseResponseToFiles(stepsResponse.data.response);
+            setFiles(prevFiles => {
+                const mergedFiles = [...prevFiles];
+                newFiles.forEach(newFile => {
+                    const existingFileIndex = mergedFiles.findIndex(f => f.path === newFile.path);
+                    if (existingFileIndex !== -1) {
+                        mergedFiles[existingFileIndex] = newFile;
+                    } else {
+                        mergedFiles.push(newFile);
+                    }
+                });
+                return mergedFiles;
+            });
+
             setSteps(s => [...s, ...parseXml(stepsResponse.data.response).map(x => ({
                 ...x,
                 status: "pending"
@@ -134,12 +196,15 @@ export const Builder = () => {
                 content
             })));
 
-            setLlmMessages(x => [...x, { role: "assistant", content: stepsResponse.data.response }]);
+            setLlmMessages(x => [...x, {
+                role: "assistant",
+                content: stepsResponse.data.response
+            }]);
         } catch (error) {
             console.error('Error in init function:', error);
             setLoading(false);
         }
-    }
+    };
 
     // Initialize on prompt change
     useEffect(() => {
@@ -190,6 +255,21 @@ export const Builder = () => {
             });
             setLoading(false);
 
+            // Parse files from the response
+            const newFiles = parseResponseToFiles(stepsResponse.data.response);
+            setFiles(prevFiles => {
+                const mergedFiles = [...prevFiles];
+                newFiles.forEach(newFile => {
+                    const existingFileIndex = mergedFiles.findIndex(f => f.path === newFile.path);
+                    if (existingFileIndex !== -1) {
+                        mergedFiles[existingFileIndex] = newFile;
+                    } else {
+                        mergedFiles.push(newFile);
+                    }
+                });
+                return mergedFiles;
+            });
+
             setLlmMessages(x => [...x, newMessage]);
             setLlmMessages(x => [...x, {
                 role: "assistant",
@@ -206,7 +286,6 @@ export const Builder = () => {
         }
     };
 
-    console.log(files);
     return (
         <div className="min-h-screen bg-gray-900 flex flex-col">
             {/* Header */ }

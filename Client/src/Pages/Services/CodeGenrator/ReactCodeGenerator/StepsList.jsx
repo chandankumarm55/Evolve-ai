@@ -6,9 +6,9 @@ function StepsList({ steps, currentStep, onStepClick }) {
         <div className="bg-gray-900 rounded-lg shadow-lg p-4 h-full overflow-auto">
             <h2 className="text-lg font-semibold mb-4 text-gray-100">Build Steps</h2>
             <div className="space-y-4">
-                { steps.map((step) => (
+                { steps.map((step, index) => (
                     <div
-                        key={ step.id }
+                        key={ `step-${step.id || index}` }
                         className={ `p-1 rounded-lg cursor-pointer transition-colors ${currentStep === step.id
                             ? 'bg-gray-800 border border-gray-700'
                             : 'hover:bg-gray-800'
