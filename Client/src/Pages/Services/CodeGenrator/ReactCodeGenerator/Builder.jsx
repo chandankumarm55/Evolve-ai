@@ -19,6 +19,16 @@ import { parseXml } from './steps';
 
 // Utility function to parse response into files
 const parseResponseToFiles = (response) => {
+    // Remove any wrapping JSON if present
+    if (typeof response === 'string' && response.startsWith('{"response":')) {
+        try {
+            response = JSON.parse(response).response;
+        } catch (error) {
+            console.error('Error parsing response JSON:', error);
+            return [];
+        }
+    }
+
     const parser = new DOMParser();
     const xmlDoc = parser.parseFromString(response, 'text/xml');
 
@@ -36,7 +46,7 @@ const parseResponseToFiles = (response) => {
             name: fileName,
             type: 'file',
             path: filePath,
-            content: content
+            content: content.trim()
         };
 
         let currentLevel = parsedFiles;
