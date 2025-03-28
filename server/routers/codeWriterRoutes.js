@@ -3,6 +3,8 @@ import axios from "axios";
 import cors from "cors";
 import { BASE_PROMPT, getSystemPrompt } from "../utils/prompts.js";
 import { basePrompt as reactBasePrompt } from "../defaults/react.js";
+import { MODIFICATIONS_TAG_NAME, WORK_DIR, allowedHTMLElements } from '../utils/constants.js';
+import { stripIndents } from "../utils/stripindents.js";
 
 // Mistral AI API URL and key
 const MISTRAL_API_URL = "https://api.mistral.ai/v1/chat/completions";
