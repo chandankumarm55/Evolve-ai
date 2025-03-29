@@ -3,6 +3,13 @@
 node_modules/
 
 
+# Environment files
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
 client/.env
 server/.env
 # Environment files
