@@ -19,6 +19,9 @@ const CodeExplorer = () => {
     const isDark = theme === 'dark';
     const navigate = useNavigate();
 
+    // Get backend URL from environment variables or use default
+    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+
     useEffect(() => {
         document.documentElement.classList.toggle('dark', isDark);
     }, [isDark]);
@@ -114,15 +117,24 @@ const CodeExplorer = () => {
         setIsLoading(true);
         setError('');
 
+        console.log('Making API call to:', `${BACKEND_URL}/api/codewriter/htmlcssjscodegenerate`);
+
         try {
-            const response = await axios.post(`${VITE_BACKEND_URL}/api/codewriter/htmlcssjscodegenerate`, {
+            const response = await axios.post(`${BACKEND_URL}/api/codewriter/htmlcssjscodegenerate`, {
                 prompt,
                 conversation
+            }, {
+                timeout: 30000, // 30 second timeout
+                headers: {
+                    'Content-Type': 'application/json',
+                }
             });
 
+            console.log('API Response:', response.data);
+
             if (response.data && response.data.content) {
-                setConversation(response.data.conversation);
-                setSessionId(response.data.sessionId);
+                setConversation(response.data.conversation || []);
+                setSessionId(response.data.sessionId || Date.now().toString());
                 const parsedFiles = parseAiResponse(response.data.content);
 
                 if (Object.keys(parsedFiles).length === 0) {
@@ -137,10 +149,24 @@ const CodeExplorer = () => {
                 setPrompt('');
             } else {
                 setError('Invalid response from server');
+                console.error('Invalid response structure:', response.data);
             }
         } catch (err) {
             console.error('Error generating code:', err);
-            setError(err.response?.data?.message || 'Failed to generate code');
+
+            // More detailed error handling
+            if (err.code === 'ECONNREFUSED' || err.code === 'ERR_NETWORK') {
+                setError(`Cannot connect to backend server at ${BACKEND_URL}. Please check if the server is running.`);
+            } else if (err.response) {
+                // Server responded with error status
+                setError(err.response?.data?.message || `Server error: ${err.response.status}`);
+            } else if (err.request) {
+                // Request was made but no response received
+                setError('No response from server. Please check your network connection.');
+            } else {
+                // Something else happened
+                setError(err.message || 'Failed to generate code');
+            }
         } finally {
             setIsLoading(false);
         }
@@ -156,15 +182,24 @@ const CodeExplorer = () => {
         setIsLoading(true);
         setError('');
 
+        console.log('Making API call to:', `${BACKEND_URL}/api/codewriter/continue`);
+
         try {
-            const response = await axios.post('http://localhost:3000/api/codewriter/continue', {
+            const response = await axios.post(`${BACKEND_URL}/api/codewriter/continue`, {
                 prompt: featurePrompt,
                 conversation,
                 sessionId
+            }, {
+                timeout: 30000, // 30 second timeout
+                headers: {
+                    'Content-Type': 'application/json',
+                }
             });
 
+            console.log('API Response:', response.data);
+
             if (response.data && response.data.content) {
-                setConversation(response.data.conversation);
+                setConversation(response.data.conversation || []);
                 const parsedFiles = parseAiResponse(response.data.content);
 
                 if (Object.keys(parsedFiles).length === 0) {
@@ -181,10 +216,21 @@ const CodeExplorer = () => {
                 setFeaturePrompt('');
             } else {
                 setError('Invalid response from server');
+                console.error('Invalid response structure:', response.data);
             }
         } catch (err) {
             console.error('Error adding feature:', err);
-            setError(err.response?.data?.message || 'Failed to add feature');
+
+            // More detailed error handling
+            if (err.code === 'ECONNREFUSED' || err.code === 'ERR_NETWORK') {
+                setError(`Cannot connect to backend server at ${BACKEND_URL}. Please check if the server is running.`);
+            } else if (err.response) {
+                setError(err.response?.data?.message || `Server error: ${err.response.status}`);
+            } else if (err.request) {
+                setError('No response from server. Please check your network connection.');
+            } else {
+                setError(err.message || 'Failed to add feature');
+            }
         } finally {
             setIsLoading(false);
         }
@@ -199,11 +245,14 @@ const CodeExplorer = () => {
         setDownloadStatus('Preparing download...');
 
         try {
-            const response = await axios.post('http://localhost:3000/api/codewriter/download', {
+            const response = await axios.post(`${BACKEND_URL}/api/codewriter/download`, {
                 files
             }, {
                 responseType: 'blob',
-                timeout: 30000 // 30 second timeout
+                timeout: 30000, // 30 second timeout
+                headers: {
+                    'Content-Type': 'application/json',
+                }
             });
 
             const blob = new Blob([response.data], { type: 'application/zip' });
@@ -220,7 +269,11 @@ const CodeExplorer = () => {
             setTimeout(() => setDownloadStatus(''), 3000);
         } catch (err) {
             console.error('Error downloading files:', err);
-            setError(err.response?.data?.message || 'Failed to download files');
+            if (err.code === 'ECONNREFUSED' || err.code === 'ERR_NETWORK') {
+                setError(`Cannot connect to backend server at ${BACKEND_URL}. Please check if the server is running.`);
+            } else {
+                setError(err.response?.data?.message || 'Failed to download files');
+            }
             setDownloadStatus('');
         }
     };
@@ -397,6 +450,11 @@ const CodeExplorer = () => {
                         { downloadStatus }
                     </div>
                 ) }
+
+                {/* Debug info - remove this in production */ }
+                <div className="mt-2 text-xs text-gray-500">
+                    Backend URL: { BACKEND_URL }
+                </div>
             </div>
 
             <div className="flex flex-1 overflow-hidden flex-col md:flex-row">
