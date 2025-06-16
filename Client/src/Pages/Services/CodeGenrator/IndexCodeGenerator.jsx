@@ -4,10 +4,12 @@ import { FaReact, FaNodeJs, FaPython } from "react-icons/fa";
 import { CgWebsite } from "react-icons/cg";
 import { AiOutlineConsoleSql } from "react-icons/ai";
 import { MdOutlinePhp } from "react-icons/md";
+import { useNavigate } from 'react-router-dom';
 
 const CodeGenerator = () => {
     const { theme } = useTheme();
     const isDark = theme === 'dark';
+    const navigate = useNavigate();
 
     const cardClass = `flex flex-col text-center justify-center items-center 
                       border border-gray-400 rounded-md p-4 cursor-pointer
@@ -22,16 +24,19 @@ const CodeGenerator = () => {
                 </h1>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4">
-                    <div className={ cardClass }>
-                        <FaReact className="text-4xl mb-2" style={ { color: '#61DAFB' } } />
-                        <h6 className="font-medium">React Code Writer</h6>
-                    </div>
+                    <button onClick={ () => navigate('/dashboard/codegenerator/react') }>
+                        <div className={ cardClass }>
+                            <FaReact className="text-4xl mb-2" style={ { color: '#61DAFB' } } />
+                            <h6 className="font-medium">React Code Writer</h6>
+                        </div>
+                    </button>
 
-                    <div className={ cardClass }>
-                        <CgWebsite className="text-4xl mb-2" style={ { color: '#E44D26' } } />
-                        <h6 className="font-medium">HTML, CSS, JS Writer</h6>
-                    </div>
-
+                    <button onClick={ () => navigate('/dashboard/codegenerator/htmlcssjs') }>
+                        <div className={ cardClass }>
+                            <CgWebsite className="text-4xl mb-2" style={ { color: '#E44D26' } } />
+                            <h6 className="font-medium">HTML, CSS, JS Writer</h6>
+                        </div>
+                    </button>
                     <div className={ cardClass }>
                         <FaNodeJs className="text-4xl mb-2" style={ { color: '#68A063' } } />
                         <h6 className="font-medium">Node JS Code Writer</h6>

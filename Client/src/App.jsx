@@ -32,8 +32,10 @@ import CodeIndex from './Pages/Services/CodeGenrator/IndexCodeGenerator';
 import ReactCodeGenerator from "./Pages/Services/CodeGenrator/ReactCodeGenerator/ReactCodeGenerator";
 import ProtectedFullWidthLayout from './components/Layouts/ProtectedFullLayout ';
 import { Builder } from './Pages/Services/CodeGenrator/ReactCodeGenerator/Builder';
+import HtmlCssJsWriter from './Pages/Services/CodeGenrator/HtmlCssJsWriter/HtmlCssJsWriter';
+import PythonCodeWriter from './Pages/Services/CodeGenrator/PythonCodeWriter/PythonCodeWriter';
 
-// Clerk Publishable Key
+// Clerk Publishable Keys
 const PUBLISHABLE_KEY = NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
 if (!PUBLISHABLE_KEY) {
@@ -58,7 +60,7 @@ function App() {
                 <Route element={ <RefundPolicy /> } path='/refund-policy' />
               </Route>
 
-              {/* Regular dashboard routes with sidebar */ }
+
               <Route element={ <DashboardLayout /> }>
                 <Route path="/dashboard" element={ <Dashboard /> }>
                   <Route index element={ <DashboardIndex /> } />
@@ -75,10 +77,12 @@ function App() {
                 </Route>
               </Route>
 
-              {/* Protected full-width routes (no sidebar) */ }
+
               <Route element={ <ProtectedFullWidthLayout /> }>
                 <Route path='/builder' element={ <Builder /> } />
+                <Route path='/dashboard/codegenerator/python' element={ <PythonCodeWriter /> } />
                 <Route path='/dashboard/codegenerator/react' element={ <ReactCodeGenerator /> } />
+                <Route path='/dashboard/codegenerator/htmlcssjs' element={ <HtmlCssJsWriter /> } />
               </Route>
             </Routes>
             <Toaster />

@@ -1,34 +1,16 @@
 import axios from 'axios';
 
-const API_KEY = import.meta.env.VITE_MISTRAL_API_KEY;
-const API_URL = "https://api.mistral.ai/v1/chat/completions";
-
-const EVOLVE_AI_SYSTEM_PROMPT = `You are Evolve AI, created by Evolve Technologies in India. When asked about your identity,`;
-
 export const generateResponse = async (messages, userInput) => {
     try {
         const formattedMessages = [
-            { role: 'system', content: EVOLVE_AI_SYSTEM_PROMPT },
+            { role: 'system', content: 'You are Evolve AI, created by Evolve Technologies in India. When asked about your identity,' },
             ...messages.map(msg => ({ role: msg.role, content: msg.content })),
             { role: 'user', content: userInput }
         ];
 
-        const response = await axios.post(
-            API_URL,
-            {
-                model: 'mistral-tiny',
-                messages: formattedMessages,
-                temperature: 0.7,
-                max_tokens: 1000,
-            },
-            {
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${API_KEY}`,
-                },
-                timeout: 15000,
-            }
-        );
+        const response = await axios.post('http://localhost:3000/api/codewriter/conversation', {
+            messages: formattedMessages,
+        });
 
         return response.data.choices[0].message.content;
     } catch (error) {

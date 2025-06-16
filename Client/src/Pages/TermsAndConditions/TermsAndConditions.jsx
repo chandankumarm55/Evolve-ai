@@ -6,7 +6,7 @@ import Footer from '../../components/FunctionalComponents/Footer';
 
 const TermsAndConditions = () => {
     const { theme } = useTheme();
-    const isDark = theme === 'dark';
+    const isDark = theme === 'dark'
 
     return (
         <>

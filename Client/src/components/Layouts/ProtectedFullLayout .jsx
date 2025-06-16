@@ -20,7 +20,7 @@ const ProtectedFullWidthLayout = () => {
     }
 
     return (
-        <div className={ `min-h-screen w-full ${isDark ? 'bg-gray-800 text-gray-200' : 'bg-white text-gray-900'}` }>
+        <div className={ `min-h-screen w-full ${isDark ? 'bg-black text-white' : 'bg-white text-black'}` }>
             <Header />
             <div className="p-4 h-full overflow-auto">
                 <Outlet />

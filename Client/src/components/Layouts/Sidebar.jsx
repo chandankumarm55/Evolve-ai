@@ -12,7 +12,8 @@ import {
     BookOpen,
     Speech,
     QrCode,
-    AudioLines
+    AudioLines,
+    CodeXml
 } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 
@@ -28,7 +29,7 @@ const menuItems = [
     { icon: BookOpen, label: 'Dictionary', path: '/dashboard/dictionary' },
     { icon: Speech, label: 'Speech To Text', path: '/dashboard/speech-to-text' },
     { icon: QrCode, label: 'QR Code Generator', path: '/dashboard/QR-Code-Generator' },
-
+    { icon: CodeXml, label: 'Code Writer', path: '/dashboard/codegenerator' }
 
 ];
 

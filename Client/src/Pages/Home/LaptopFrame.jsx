@@ -62,9 +62,9 @@ const LaptopFrame = () => {
 
                     if (messages[currentMessageIndex]?.type === 'ai') {
                         setLoading(true);
-                        setTimeout(() => setLoading(false), 1000);
+                        setTimeout(() => setLoading(false), 500);
                     }
-                }, 2000);
+                }, 1000);
 
                 return () => clearInterval(interval);
             }

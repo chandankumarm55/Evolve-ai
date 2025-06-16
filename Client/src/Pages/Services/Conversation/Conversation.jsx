@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
+import { useLocation } from 'react-router-dom';
 import MessageList from './MessageList';
 import MessageInput from './MessageInput';
 import { generateResponse } from './ConversationAPI';
@@ -11,6 +12,9 @@ import axios from 'axios';
 import { UsageTrackUrl } from '../../../Utilities/constant';
 
 const Conversation = () => {
+    const location = useLocation();
+    const initialPrompt = location.state?.initialPrompt || '';
+    const hasSubmittedInitialPrompt = useRef(false);
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
     const [isTyping, setIsTyping] = useState(false);
@@ -19,6 +23,14 @@ const Conversation = () => {
     const isDark = theme === 'dark';
     const dispatch = useDispatch();
     const clerkId = localStorage.getItem('clerkId');
+    const [hasPromptBeenHandled, setHasPromptBeenHandled] = useState(false);
+
+    useEffect(() => {
+        if (initialPrompt && !hasSubmittedInitialPrompt.current) {
+            hasSubmittedInitialPrompt.current = true; // prevent future calls
+            handleSubmit(initialPrompt);
+        }
+    }, [initialPrompt]);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -34,14 +46,10 @@ const Conversation = () => {
         }
 
         try {
-            const response = await axios.post(UsageTrackUrl, {
-                clerkId,
-            });
-
+            const response = await axios.post(UsageTrackUrl, { clerkId });
             if (response.data.user) {
                 dispatch(updateUser(response.data.user));
             }
-
             return true;
         } catch (error) {
             if (error.response?.status === 429) {
@@ -51,34 +59,9 @@ const Conversation = () => {
         }
     };
 
-    const handleRegenerateResponse = async (originalPrompt) => {
-        setIsTyping(true);
-        try {
-            await trackUsage();
-            const response = await generateResponse(messages, originalPrompt);
-            const aiMessage = {
-                role: 'assistant',
-                content: response,
-                timestamp: new Date().toLocaleTimeString(),
-                originalPrompt,
-            };
-            setMessages((prev) => [...prev, aiMessage]);
-        } catch (error) {
-            const errorMessage = error.message || 'Sorry, I encountered an error. Please try again.';
-            setMessages((prev) => [
-                ...prev,
-                {
-                    role: 'assistant',
-                    content: errorMessage,
-                    timestamp: new Date().toLocaleTimeString(),
-                },
-            ]);
-        } finally {
-            setIsTyping(false);
-        }
-    };
-
     const handleSubmit = async (message) => {
+        setInput('');
+
         const userMessage = {
             role: 'user',
             content: message,
@@ -96,10 +79,36 @@ const Conversation = () => {
                 timestamp: new Date().toLocaleTimeString(),
                 originalPrompt: message,
             };
-            setInput('');
             setMessages((prev) => [...prev, aiMessage]);
         } catch (error) {
             const errorMessage = error.message || 'Sorry, I encountered an error. Please try again.';
+            setMessages((prev) => [
+                ...prev,
+                {
+                    role: 'assistant',
+                    content: errorMessage,
+                    timestamp: new Date().toLocaleTimeString(),
+                },
+            ]);
+        } finally {
+            setIsTyping(false);
+        }
+    };
+
+    const handleRegenerateResponse = async (originalPrompt) => {
+        setIsTyping(true);
+        try {
+            await trackUsage();
+            const response = await generateResponse(messages, originalPrompt);
+            const aiMessage = {
+                role: 'assistant',
+                content: response,
+                timestamp: new Date().toLocaleTimeString(),
+                originalPrompt,
+            };
+            setMessages((prev) => [...prev, aiMessage]);
+        } catch (error) {
+            const errorMessage = error.message || 'Sorry, I encountered an error.';
             setMessages((prev) => [
                 ...prev,
                 {
@@ -119,10 +128,7 @@ const Conversation = () => {
     };
 
     return (
-        <ServiceContainer
-            className={ `${isDark ? 'bg-gray-900 text-gray-100' : 'bg-gray-100 text-gray-900'} 
-            flex flex-col h-screen`}
-        >
+        <ServiceContainer className={ `${isDark ? 'bg-gray-900 text-gray-100' : 'bg-gray-100 text-gray-900'} flex flex-col h-screen` }>
             <div className="flex-1 overflow-y-auto">
                 { messages.length === 0 ? (
                     <RandomQuestions onQuestionSelect={ handleQuestionSelect } />
