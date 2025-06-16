@@ -115,7 +115,7 @@ const CodeExplorer = () => {
         setError('');
 
         try {
-            const response = await axios.post('http://localhost:3000/api/codewriter/htmlcssjscodegenerate', {
+            const response = await axios.post(`${VITE_BACKEND_URL}/api/codewriter/htmlcssjscodegenerate`, {
                 prompt,
                 conversation
             });
