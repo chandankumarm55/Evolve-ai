@@ -451,10 +451,7 @@ const CodeExplorer = () => {
                     </div>
                 ) }
 
-                {/* Debug info - remove this in production */ }
-                <div className="mt-2 text-xs text-gray-500">
-                    Backend URL: { BACKEND_URL }
-                </div>
+
             </div>
 
             <div className="flex flex-1 overflow-hidden flex-col md:flex-row">
