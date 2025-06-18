@@ -42,7 +42,7 @@ const CodeGenerator = () => {
                         <h6 className="font-medium">Node JS Code Writer</h6>
                     </div>
 
-                    <div className={ cardClass }>
+                    <div className={ cardClass } onClick={ () => navigate('/dashboard/codegenerator/python') }>
                         <FaPython className="text-4xl mb-2" style={ { color: '#3776AB' } } />
                         <h6 className="font-medium">Python Code Writer</h6>
                     </div>

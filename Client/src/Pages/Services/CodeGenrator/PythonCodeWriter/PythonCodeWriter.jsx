@@ -1,18 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowRight, RefreshCw, Copy, Check } from 'lucide-react';
+import { ArrowRight, RefreshCw, Copy, Check, Code, MessageSquare } from 'lucide-react';
 
 const PythonCodeWriter = () => {
     const [userInput, setUserInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [conversations, setConversations] = useState([]);
-    const [currentCode, setCurrentCode] = useState('# Your Python code will appear here');
-    const [codeInfo, setCodeInfo] = useState('Enter a prompt to generate Python code.');
+    const [currentCode, setCurrentCode] = useState('# Your Python code will appear here\n# Start by describing what you want to build!');
+    const [codeInfo, setCodeInfo] = useState('💡 Enter a prompt to generate Python code.\n\n✨ Try asking for:\n• Data analysis scripts\n• Web scraping tools\n• API integrations\n• Machine learning models\n• Automation scripts');
     const [copied, setCopied] = useState(false);
-    const [theme, setTheme] = useState('light');
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-
+    const handleSubmit = async () => {
         if (!userInput.trim()) return;
 
         // Add user message to conversation
@@ -44,9 +41,16 @@ const PythonCodeWriter = () => {
             }]);
         } catch (error) {
             console.error('Error generating code:', error);
-            setCodeInfo('Failed to generate code. Please try again.');
+            setCodeInfo('❌ Failed to generate code. Please try again.');
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const handleKeyPress = (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleSubmit();
         }
     };
 
@@ -65,7 +69,7 @@ const PythonCodeWriter = () => {
             }
 
             const data = await response.json();
-            return data.fullResponse; // Or you can use data.code and data.info separately
+            return data.fullResponse;
         } catch (error) {
             console.error('Error calling API:', error);
             throw error;
@@ -73,7 +77,6 @@ const PythonCodeWriter = () => {
     };
 
     const parseResponse = (response) => {
-        // Split the response into code and info sections based on the "INFO:" keyword
         const parts = response.split("INFO:");
         return {
             code: parts[0].trim(),
@@ -87,95 +90,140 @@ const PythonCodeWriter = () => {
         setTimeout(() => setCopied(false), 2000);
     };
 
-    const toggleTheme = () => {
-        setTheme(theme === 'light' ? 'dark' : 'light');
-    };
-
     return (
-        <div className={ `flex mt-20 pt-10 flex-col h-screen ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}` }>
-            {/* Header */ }
-            <div className={ `p-4 border-b flex justify-between items-center ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}` }>
-                <h1 className="text-xl font-bold">Python Code Generator</h1>
-                <button
-                    onClick={ toggleTheme }
-                    className={ `px-3 py-1 rounded-md ${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-gray-200 text-gray-800'}` }
-                >
-                    { theme === 'light' ? 'Dark Mode' : 'Light Mode' }
-                </button>
-            </div>
+        <div className="h-screen pt-16 overflow-hidden">
+            {/* Fixed container with no scrolling */ }
+            <div className="h-full flex flex-col">
+                {/* Header */ }
+                <div className="border-b px-6 py-4 backdrop-blur-sm">
+                    <div className="flex items-center space-x-3">
+                        <div className="p-2 bg-blue-500/80 rounded-lg backdrop-blur-sm">
+                            <Code size={ 20 } className="text-white" />
+                        </div>
+                        <div>
+                            <h1 className="text-xl font-bold ">
+                                Python Code Generator
+                            </h1>
+                            <p className="text-sm text-gray-800">
+                                AI-powered Python development assistant
+                            </p>
+                        </div>
+                    </div>
+                </div>
 
-            {/* Main content */ }
-            <div className="flex flex-1 overflow-hidden">
-                {/* Code section */ }
-                <div className={ `flex-1 flex flex-col border-r ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}` }>
-                    <div className={ `p-4 border-b flex justify-between items-center ${theme === 'dark' ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-gray-100'}` }>
-                        <h2 className="font-medium">Generated Python Code</h2>
+                {/* Main Content */ }
+                <div className="flex-1 flex overflow-hidden pb-32">
+                    {/* Code Section */ }
+                    <div className="flex-1 flex flex-col  border-r/30">
+                        <div className=" border-b px-6 py-3 flex justify-between items-center backdrop-blur-sm">
+                            <h2 className="font-semibold text-gray-800 flex items-center space-x-2">
+                                <Code size={ 18 } />
+                                <span>Generated Code</span>
+                            </h2>
+                            <button
+                                onClick={ copyToClipboard }
+                                className={ `flex items-center space-x-2 px-3 py-1.5 rounded-lg transition-all backdrop-blur-sm ${copied
+                                    ? 'bg-green-500/80 text-white'
+                                    : 'bg-white/80  border hover:bg-opacity-80 text-gray-800'
+                                    }` }
+                            >
+                                { copied ? <Check size={ 16 } /> : <Copy size={ 16 } /> }
+                                <span className="text-sm">{ copied ? 'Copied!' : 'Copy' }</span>
+                            </button>
+                        </div>
+                        <div className="flex-1 overflow-auto ">
+                            <pre className="p-6 font-mono text-sm  whitespace-pre-wrap leading-relaxed">
+                                { currentCode }
+                            </pre>
+                        </div>
+                    </div>
+
+                    {/* Info Section */ }
+                    <div className="w-2/5 flex flex-col">
+                        <div className="border-b px-6 py-3 backdrop-blur-sm">
+                            <h2 className="font-semibold flex items-center space-x-2">
+                                <MessageSquare size={ 18 } />
+                                <span>Code Information</span>
+                            </h2>
+                        </div>
+                        <div className="flex-1 overflow-auto ">
+                            <div className="p-6  whitespace-pre-wrap leading-relaxed">
+                                { codeInfo }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Conversation History */ }
+                { conversations.length > 0 && (
+                    <div className=" border-t px-6 py-4 backdrop-blur-sm">
+                        <h3 className="font-medium  mb-3 flex items-center space-x-2">
+                            <MessageSquare size={ 16 } />
+                            <span>Recent Conversation</span>
+                        </h3>
+                        <div className="max-h-32 overflow-y-auto space-y-2">
+                            { conversations.slice(-4).map((msg, index) => (
+                                <div
+                                    key={ index }
+                                    className={ `p-3 rounded-lg backdrop-blur-sm ${msg.role === 'user'
+                                        ? 'bg-blue-100/60 text-blue-800'
+                                        : 'bg-gray-100/60 text-gray-700'
+                                        }` }
+                                >
+                                    <div className="font-medium text-xs uppercase tracking-wider mb-1">
+                                        { msg.role === 'user' ? 'You' : 'AI Assistant' }
+                                    </div>
+                                    <div className="text-sm">
+                                        { msg.content.length > 120 ?
+                                            msg.content.substring(0, 120) + '...' :
+                                            msg.content
+                                        }
+                                    </div>
+                                </div>
+                            )) }
+                        </div>
+                    </div>
+                ) }
+
+                {/* Fixed Input Section at Bottom */ }
+                <div className="fixed bottom-0 left-0 right-0  border-t px-6 py-4 backdrop-blur-md shadow-2xl">
+                    <div className="flex space-x-3 max-w-7xl mx-auto">
+                        <div className="flex-1 relative ">
+                            <input
+                                type="text"
+                                value={ userInput }
+                                onChange={ (e) => setUserInput(e.target.value) }
+                                onKeyPress={ handleKeyPress }
+                                placeholder="Describe the Python code you want to generate..."
+                                className="w-full px-4 py-3 rounded-xl bg-transparent border-2 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all backdrop-blur-sm "
+                                disabled={ isLoading }
+                            />
+                        </div>
                         <button
-                            onClick={ copyToClipboard }
-                            className={ `flex items-center gap-1 px-2 py-1 rounded-md ${theme === 'dark' ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'}` }
-                        >
-                            { copied ? <Check size={ 16 } /> : <Copy size={ 16 } /> }
-                            { copied ? 'Copied!' : 'Copy' }
-                        </button>
-                    </div>
-                    <div className={ `flex-1 overflow-auto p-4 font-mono text-sm ${theme === 'dark' ? 'bg-gray-800' : 'bg-gray-50'}` }>
-                        <pre className="whitespace-pre-wrap">{ currentCode }</pre>
-                    </div>
-                </div>
-
-                {/* Info section */ }
-                <div className={ `w-2/5 flex flex-col ${theme === 'dark' ? 'bg-gray-900' : 'bg-white'}` }>
-                    <div className={ `p-4 border-b ${theme === 'dark' ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-gray-100'}` }>
-                        <h2 className="font-medium">Code Information</h2>
-                    </div>
-                    <div className={ `flex-1 overflow-auto p-4 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}` }>
-                        <pre className="whitespace-pre-wrap">{ codeInfo }</pre>
-                    </div>
-                </div>
-            </div>
-
-            {/* Conversation history */ }
-            <div className={ `p-4 border-t ${theme === 'dark' ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-gray-100'}` }>
-                <h2 className="font-medium mb-2">Conversation</h2>
-                <div className={ `max-h-40 overflow-y-auto mb-4 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}` }>
-                    { conversations.map((msg, index) => (
-                        <div
-                            key={ index }
-                            className={ `mb-2 p-2 rounded-lg ${msg.role === 'user'
-                                ? theme === 'dark' ? 'bg-blue-900 text-white' : 'bg-blue-100 text-blue-800'
-                                : theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-gray-200 text-gray-800'
+                            onClick={ handleSubmit }
+                            disabled={ isLoading || !userInput.trim() }
+                            className={ `px-6 py-3 rounded-xl font-medium transition-all flex items-center space-x-2 backdrop-blur-sm ${isLoading || !userInput.trim()
+                                ? 'bg-gray-300/50  cursor-not-allowed'
+                                : 'bg-blue-500/80 hover:bg-blue-600/80 shadow-lg hover:shadow-xl transform hover:scale-105'
                                 }` }
                         >
-                            <strong>{ msg.role === 'user' ? 'You: ' : 'AI: ' }</strong>
-                            { msg.content.length > 100 ? msg.content.substring(0, 100) + '...' : msg.content }
-                        </div>
-                    )) }
+                            { isLoading ? (
+                                <>
+                                    <RefreshCw size={ 18 } className="animate-spin" />
+                                    <span>Generating...</span>
+                                </>
+                            ) : (
+                                <>
+                                    <span>Generate</span>
+                                    <ArrowRight size={ 18 } />
+                                </>
+                            ) }
+                        </button>
+                    </div>
+                    <div className="mt-2 text-xs text-gray-600 text-center max-w-7xl mx-auto">
+                        Press Enter to generate code • Support for data analysis, web scraping, APIs & more
+                    </div>
                 </div>
-
-                {/* Input form */ }
-                <form onSubmit={ handleSubmit } className="flex gap-2">
-                    <input
-                        type="text"
-                        value={ userInput }
-                        onChange={ (e) => setUserInput(e.target.value) }
-                        placeholder="Ask for Python code or request changes..."
-                        className={ `flex-1 px-4 py-2 rounded-md ${theme === 'dark'
-                            ? 'bg-gray-700 text-white border-gray-600'
-                            : 'bg-white text-gray-900 border-gray-300'
-                            } border` }
-                    />
-                    <button
-                        type="submit"
-                        disabled={ isLoading }
-                        className={ `px-4 py-2 rounded-md flex items-center gap-2 ${theme === 'dark'
-                            ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                            : 'bg-blue-500 hover:bg-blue-600 text-white'
-                            } ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}` }
-                    >
-                        { isLoading ? <RefreshCw size={ 18 } className="animate-spin" /> : <ArrowRight size={ 18 } /> }
-                        { isLoading ? 'Generating...' : 'Send' }
-                    </button>
-                </form>
             </div>
         </div>
     );
