@@ -1,13 +1,81 @@
-import React, { useState, useEffect } from 'react';
-import { ArrowRight, RefreshCw, Copy, Check, Code, MessageSquare } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { ArrowRight, RefreshCw, Copy, Check, Code, MessageSquare, ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useTheme } from '../../../../contexts/ThemeContext';
+import * as monaco from 'monaco-editor';
 
 const PythonCodeWriter = () => {
+    const { theme } = useTheme();
+    const isDark = theme === 'dark';
+    const navigate = useNavigate();
     const [userInput, setUserInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [conversations, setConversations] = useState([]);
     const [currentCode, setCurrentCode] = useState('# Your Python code will appear here\n# Start by describing what you want to build!');
     const [codeInfo, setCodeInfo] = useState('💡 Enter a prompt to generate Python code.\n\n✨ Try asking for:\n• Data analysis scripts\n• Web scraping tools\n• API integrations\n• Machine learning models\n• Automation scripts');
     const [copied, setCopied] = useState(false);
+    const editorRef = useRef(null);
+    const monacoRef = useRef(null);
+
+    // Initialize Monaco Editor
+    useEffect(() => {
+        if (editorRef.current && !monacoRef.current) {
+            monacoRef.current = monaco.editor.create(editorRef.current, {
+                value: currentCode,
+                language: 'python',
+                theme: isDark ? 'vs-dark' : 'vs-light',
+                automaticLayout: true,
+                fontSize: 14,
+                fontFamily: 'Monaco, Menlo, "Ubuntu Mono", consolas, "source-code-pro", monospace',
+                lineNumbers: 'on',
+                scrollBeyondLastLine: false,
+                minimap: { enabled: true },
+                wordWrap: 'on',
+                folding: true,
+                selectOnLineNumbers: true,
+                roundedSelection: false,
+                readOnly: false,
+                cursorStyle: 'line',
+                automaticLayout: true,
+            });
+
+            // Listen for content changes
+            monacoRef.current.onDidChangeModelContent(() => {
+                setCurrentCode(monacoRef.current.getValue());
+            });
+        }
+
+        return () => {
+            if (monacoRef.current) {
+                monacoRef.current.dispose();
+                monacoRef.current = null;
+            }
+        };
+    }, []);
+
+    // Update editor content when currentCode changes
+    useEffect(() => {
+        if (monacoRef.current && monacoRef.current.getValue() !== currentCode) {
+            monacoRef.current.setValue(currentCode);
+        }
+    }, [currentCode]);
+
+    // Update editor theme when theme changes
+    useEffect(() => {
+        if (monacoRef.current) {
+            monaco.editor.setTheme(isDark ? 'vs-dark' : 'vs-light');
+        }
+    }, [isDark]);
+
+    // Filter function to remove code blocks
+    const filterCodeBlocks = (text) => {
+        // Remove ```python, ```py, or ``` at the beginning and end
+        return text
+            .replace(/^```(?:python|py)?\n?/gm, '')
+            .replace(/\n?```$/gm, '')
+            .replace(/^```\n?/gm, '')
+            .replace(/\n?```/gm, '');
+    };
 
     const handleSubmit = async () => {
         if (!userInput.trim()) return;
@@ -30,8 +98,11 @@ const PythonCodeWriter = () => {
             // Parse the response to separate code and info
             const { code, info } = parseResponse(response);
 
+            // Filter the code to remove code blocks
+            const filteredCode = filterCodeBlocks(code);
+
             // Update state with response
-            setCurrentCode(code);
+            setCurrentCode(filteredCode);
             setCodeInfo(info);
 
             // Add AI response to conversation
@@ -90,21 +161,30 @@ const PythonCodeWriter = () => {
         setTimeout(() => setCopied(false), 2000);
     };
 
+    const handleBackNavigation = () => {
+        navigate('/dashboard/codegenerator/');
+    };
+
     return (
-        <div className="h-screen pt-16 overflow-hidden">
-            {/* Fixed container with no scrolling */ }
+        <div className="h-screen pt-12 overflow-hidden">
             <div className="h-full flex flex-col">
                 {/* Header */ }
-                <div className="border-b px-6 py-4 backdrop-blur-sm">
+                <div className="px-3 py-2 backdrop-blur-sm">
                     <div className="flex items-center space-x-3">
+                        <button
+                            onClick={ handleBackNavigation }
+                            className="p-2 bg-gray-500/80 hover:bg-gray-600/80 rounded-lg backdrop-blur-sm transition-all"
+                        >
+                            <ArrowLeft size={ 20 } className="text-white" />
+                        </button>
                         <div className="p-2 bg-blue-500/80 rounded-lg backdrop-blur-sm">
                             <Code size={ 20 } className="text-white" />
                         </div>
                         <div>
-                            <h1 className="text-xl font-bold ">
+                            <h1 className="text-xl font-bold">
                                 Python Code Generator
                             </h1>
-                            <p className="text-sm text-gray-800">
+                            <p className="text-sm">
                                 AI-powered Python development assistant
                             </p>
                         </div>
@@ -114,9 +194,9 @@ const PythonCodeWriter = () => {
                 {/* Main Content */ }
                 <div className="flex-1 flex overflow-hidden pb-32">
                     {/* Code Section */ }
-                    <div className="flex-1 flex flex-col  border-r/30">
-                        <div className=" border-b px-6 py-3 flex justify-between items-center backdrop-blur-sm">
-                            <h2 className="font-semibold text-gray-800 flex items-center space-x-2">
+                    <div className="flex-1 flex flex-col border-r/30">
+                        <div className="px-6 py-3 flex justify-between items-center backdrop-blur-sm">
+                            <h2 className="font-semibold flex items-center space-x-2">
                                 <Code size={ 18 } />
                                 <span>Generated Code</span>
                             </h2>
@@ -124,78 +204,50 @@ const PythonCodeWriter = () => {
                                 onClick={ copyToClipboard }
                                 className={ `flex items-center space-x-2 px-3 py-1.5 rounded-lg transition-all backdrop-blur-sm ${copied
                                     ? 'bg-green-500/80 text-white'
-                                    : 'bg-white/80  border hover:bg-opacity-80 text-gray-800'
+                                    : 'hover:bg-opacity-80'
                                     }` }
                             >
                                 { copied ? <Check size={ 16 } /> : <Copy size={ 16 } /> }
                                 <span className="text-sm">{ copied ? 'Copied!' : 'Copy' }</span>
                             </button>
                         </div>
-                        <div className="flex-1 overflow-auto ">
-                            <pre className="p-6 font-mono text-sm  whitespace-pre-wrap leading-relaxed">
-                                { currentCode }
-                            </pre>
+                        <div className="flex-1 overflow-hidden">
+                            {/* Monaco Editor */ }
+                            <div
+                                ref={ editorRef }
+                                className="w-full h-full"
+                                style={ { height: '100%' } }
+                            />
                         </div>
                     </div>
 
                     {/* Info Section */ }
                     <div className="w-2/5 flex flex-col">
-                        <div className="border-b px-6 py-3 backdrop-blur-sm">
+                        <div className="px-6 py-3 backdrop-blur-sm">
                             <h2 className="font-semibold flex items-center space-x-2">
                                 <MessageSquare size={ 18 } />
                                 <span>Code Information</span>
                             </h2>
                         </div>
-                        <div className="flex-1 overflow-auto ">
-                            <div className="p-6  whitespace-pre-wrap leading-relaxed">
+                        <div className="flex-1 overflow-auto">
+                            <div className="p-6 whitespace-pre-wrap leading-relaxed">
                                 { codeInfo }
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Conversation History */ }
-                { conversations.length > 0 && (
-                    <div className=" border-t px-6 py-4 backdrop-blur-sm">
-                        <h3 className="font-medium  mb-3 flex items-center space-x-2">
-                            <MessageSquare size={ 16 } />
-                            <span>Recent Conversation</span>
-                        </h3>
-                        <div className="max-h-32 overflow-y-auto space-y-2">
-                            { conversations.slice(-4).map((msg, index) => (
-                                <div
-                                    key={ index }
-                                    className={ `p-3 rounded-lg backdrop-blur-sm ${msg.role === 'user'
-                                        ? 'bg-blue-100/60 text-blue-800'
-                                        : 'bg-gray-100/60 text-gray-700'
-                                        }` }
-                                >
-                                    <div className="font-medium text-xs uppercase tracking-wider mb-1">
-                                        { msg.role === 'user' ? 'You' : 'AI Assistant' }
-                                    </div>
-                                    <div className="text-sm">
-                                        { msg.content.length > 120 ?
-                                            msg.content.substring(0, 120) + '...' :
-                                            msg.content
-                                        }
-                                    </div>
-                                </div>
-                            )) }
-                        </div>
-                    </div>
-                ) }
-
                 {/* Fixed Input Section at Bottom */ }
-                <div className="fixed bottom-0 left-0 right-0  border-t px-6 py-4 backdrop-blur-md shadow-2xl">
+                <div className="fixed bottom-0 left-0 right-0 px-6 py-4 backdrop-blur-md shadow-2xl">
                     <div className="flex space-x-3 max-w-7xl mx-auto">
-                        <div className="flex-1 relative ">
+                        <div className={ `flex-1 relative ${isDark ? 'border-white-800' : 'bg-white'}` }>
                             <input
                                 type="text"
                                 value={ userInput }
                                 onChange={ (e) => setUserInput(e.target.value) }
                                 onKeyPress={ handleKeyPress }
                                 placeholder="Describe the Python code you want to generate..."
-                                className="w-full px-4 py-3 rounded-xl bg-transparent border-2 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all backdrop-blur-sm "
+                                className="w-full px-4 py-3 rounded-xl bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all backdrop-blur-sm"
                                 disabled={ isLoading }
                             />
                         </div>
@@ -203,7 +255,7 @@ const PythonCodeWriter = () => {
                             onClick={ handleSubmit }
                             disabled={ isLoading || !userInput.trim() }
                             className={ `px-6 py-3 rounded-xl font-medium transition-all flex items-center space-x-2 backdrop-blur-sm ${isLoading || !userInput.trim()
-                                ? 'bg-gray-300/50  cursor-not-allowed'
+                                ? 'bg-gray-300/50 cursor-not-allowed'
                                 : 'bg-blue-500/80 hover:bg-blue-600/80 shadow-lg hover:shadow-xl transform hover:scale-105'
                                 }` }
                         >
