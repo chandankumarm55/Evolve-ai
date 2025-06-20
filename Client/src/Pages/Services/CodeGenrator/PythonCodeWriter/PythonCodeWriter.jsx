@@ -77,6 +77,228 @@ const PythonCodeWriter = () => {
             .replace(/\n?```/gm, '');
     };
 
+    // Function to format markdown text to JSX
+    const formatMarkdownText = (text) => {
+        if (!text) return null;
+
+        // Split text into lines
+        const lines = text.split('\n');
+        const formattedElements = [];
+        let currentListItems = [];
+
+        lines.forEach((line, index) => {
+            const trimmedLine = line.trim();
+
+            // Handle headers
+            if (trimmedLine.startsWith('### ')) {
+                // Flush any pending list items
+                if (currentListItems.length > 0) {
+                    formattedElements.push(
+                        <ul key={ `list-${index}` } className="list-disc pl-6 mb-4 space-y-1">
+                            { currentListItems }
+                        </ul>
+                    );
+                    currentListItems = [];
+                }
+                formattedElements.push(
+                    <h3 key={ index } className="text-lg font-bold mb-3 mt-4">
+                        { trimmedLine.replace('### ', '') }
+                    </h3>
+                );
+            } else if (trimmedLine.startsWith('## ')) {
+                // Flush any pending list items
+                if (currentListItems.length > 0) {
+                    formattedElements.push(
+                        <ul key={ `list-${index}` } className="list-disc pl-6 mb-4 space-y-1">
+                            { currentListItems }
+                        </ul>
+                    );
+                    currentListItems = [];
+                }
+                formattedElements.push(
+                    <h2 key={ index } className="text-xl font-bold mb-3 mt-4">
+                        { trimmedLine.replace('## ', '') }
+                    </h2>
+                );
+            } else if (trimmedLine.startsWith('# ')) {
+                // Flush any pending list items
+                if (currentListItems.length > 0) {
+                    formattedElements.push(
+                        <ul key={ `list-${index}` } className="list-disc pl-6 mb-4 space-y-1">
+                            { currentListItems }
+                        </ul>
+                    );
+                    currentListItems = [];
+                }
+                formattedElements.push(
+                    <h1 key={ index } className="text-2xl font-bold mb-3 mt-4">
+                        { trimmedLine.replace('# ', '') }
+                    </h1>
+                );
+            }
+            // Handle numbered lists
+            else if (/^\d+\.\s/.test(trimmedLine)) {
+                // Flush any pending unordered list items
+                if (currentListItems.length > 0) {
+                    formattedElements.push(
+                        <ul key={ `list-${index}` } className="list-disc pl-6 mb-4 space-y-1">
+                            { currentListItems }
+                        </ul>
+                    );
+                    currentListItems = [];
+                }
+
+                const listText = trimmedLine.replace(/^\d+\.\s/, '');
+                const formattedListText = formatInlineMarkdown(listText);
+
+                // Check if this is the start of a new numbered list
+                const prevLine = index > 0 ? lines[index - 1].trim() : '';
+                const isFirstItem = !(/^\d+\.\s/.test(prevLine));
+
+                if (isFirstItem) {
+                    // Start new ordered list
+                    formattedElements.push(
+                        <ol key={ `ol-${index}` } className="list-decimal pl-6 mb-4 space-y-1">
+                            <li>{ formattedListText }</li>
+                        </ol>
+                    );
+                } else {
+                    // Continue previous ordered list - we need to handle this differently
+                    // For now, we'll create individual items
+                    formattedElements.push(
+                        <ol key={ `ol-${index}` } className="list-decimal pl-6 mb-1 space-y-1" start={ trimmedLine.match(/^(\d+)\./)[1] }>
+                            <li>{ formattedListText }</li>
+                        </ol>
+                    );
+                }
+            }
+            // Handle unordered lists (-, *, +, or •)
+            else if (/^[-*+•]\s/.test(trimmedLine)) {
+                const listText = trimmedLine.replace(/^[-*+•]\s/, '');
+                const formattedListText = formatInlineMarkdown(listText);
+                currentListItems.push(
+                    <li key={ `item-${index}` }>{ formattedListText }</li>
+                );
+            }
+            // Handle code blocks
+            else if (trimmedLine.startsWith('```')) {
+                // Flush any pending list items
+                if (currentListItems.length > 0) {
+                    formattedElements.push(
+                        <ul key={ `list-${index}` } className="list-disc pl-6 mb-4 space-y-1">
+                            { currentListItems }
+                        </ul>
+                    );
+                    currentListItems = [];
+                }
+                // Handle code blocks (simplified - you might want to improve this)
+                const codeContent = trimmedLine.replace(/```\w*/, '');
+                if (codeContent) {
+                    formattedElements.push(
+                        <code key={ index } className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-sm font-mono">
+                            { codeContent }
+                        </code>
+                    );
+                }
+            }
+            // Handle inline code
+            else if (trimmedLine.includes('`') && !trimmedLine.startsWith('```')) {
+                // Flush any pending list items
+                if (currentListItems.length > 0) {
+                    formattedElements.push(
+                        <ul key={ `list-${index}` } className="list-disc pl-6 mb-4 space-y-1">
+                            { currentListItems }
+                        </ul>
+                    );
+                    currentListItems = [];
+                }
+                formattedElements.push(
+                    <p key={ index } className="mb-3 leading-relaxed">
+                        { formatInlineMarkdown(trimmedLine) }
+                    </p>
+                );
+            }
+            // Handle empty lines
+            else if (trimmedLine === '') {
+                // Flush any pending list items before adding space
+                if (currentListItems.length > 0) {
+                    formattedElements.push(
+                        <ul key={ `list-${index}` } className="list-disc pl-6 mb-4 space-y-1">
+                            { currentListItems }
+                        </ul>
+                    );
+                    currentListItems = [];
+                }
+                formattedElements.push(<div key={ index } className="mb-2"></div>);
+            }
+            // Handle regular paragraphs
+            else {
+                // Flush any pending list items
+                if (currentListItems.length > 0) {
+                    formattedElements.push(
+                        <ul key={ `list-${index}` } className="list-disc pl-6 mb-4 space-y-1">
+                            { currentListItems }
+                        </ul>
+                    );
+                    currentListItems = [];
+                }
+                formattedElements.push(
+                    <p key={ index } className="mb-3 leading-relaxed">
+                        { formatInlineMarkdown(trimmedLine) }
+                    </p>
+                );
+            }
+        });
+
+        // Flush any remaining list items
+        if (currentListItems.length > 0) {
+            formattedElements.push(
+                <ul key="final-list" className="list-disc pl-6 mb-4 space-y-1">
+                    { currentListItems }
+                </ul>
+            );
+        }
+
+        return formattedElements;
+    };
+
+    // Function to handle inline markdown formatting
+    const formatInlineMarkdown = (text) => {
+        if (!text) return text;
+
+        // Split by backticks for inline code
+        const parts = text.split('`');
+        return parts.map((part, index) => {
+            if (index % 2 === 1) {
+                // This is inside backticks - render as code
+                return (
+                    <code key={ index } className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded text-sm font-mono">
+                        { part }
+                    </code>
+                );
+            } else {
+                // This is regular text - handle bold formatting
+                return formatBoldText(part);
+            }
+        });
+    };
+
+    // Function to handle bold text
+    const formatBoldText = (text) => {
+        if (!text) return text;
+
+        // Split by ** for bold text
+        const parts = text.split('**');
+        return parts.map((part, index) => {
+            if (index % 2 === 1) {
+                // This is inside ** - render as bold
+                return <strong key={ index } className="font-semibold">{ part }</strong>;
+            } else {
+                return part;
+            }
+        });
+    };
+
     const handleSubmit = async () => {
         if (!userInput.trim()) return;
 
@@ -203,8 +425,8 @@ const PythonCodeWriter = () => {
                             <button
                                 onClick={ copyToClipboard }
                                 className={ `flex items-center space-x-2 px-3 py-1.5 rounded-lg transition-all backdrop-blur-sm ${copied
-                                    ? 'bg-green-500/80 text-white'
-                                    : 'hover:bg-opacity-80'
+                                        ? 'bg-green-500/80 text-white'
+                                        : 'hover:bg-opacity-80'
                                     }` }
                             >
                                 { copied ? <Check size={ 16 } /> : <Copy size={ 16 } /> }
@@ -230,8 +452,8 @@ const PythonCodeWriter = () => {
                             </h2>
                         </div>
                         <div className="flex-1 overflow-auto">
-                            <div className="p-6 whitespace-pre-wrap leading-relaxed">
-                                { codeInfo }
+                            <div className="p-6">
+                                { formatMarkdownText(codeInfo) }
                             </div>
                         </div>
                     </div>
@@ -255,8 +477,8 @@ const PythonCodeWriter = () => {
                             onClick={ handleSubmit }
                             disabled={ isLoading || !userInput.trim() }
                             className={ `px-6 py-3 rounded-xl font-medium transition-all flex items-center space-x-2 backdrop-blur-sm ${isLoading || !userInput.trim()
-                                ? 'bg-gray-300/50 cursor-not-allowed'
-                                : 'bg-blue-500/80 hover:bg-blue-600/80 shadow-lg hover:shadow-xl transform hover:scale-105'
+                                    ? 'bg-gray-300/50 cursor-not-allowed'
+                                    : 'bg-blue-500/80 hover:bg-blue-600/80 shadow-lg hover:shadow-xl transform hover:scale-105'
                                 }` }
                         >
                             { isLoading ? (
