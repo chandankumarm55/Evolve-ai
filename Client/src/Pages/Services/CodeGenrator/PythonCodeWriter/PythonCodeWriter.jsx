@@ -195,7 +195,10 @@ const PythonCodeWriter = () => {
                 const codeContent = trimmedLine.replace(/```\w*/, '');
                 if (codeContent) {
                     formattedElements.push(
-                        <code key={ index } className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-sm font-mono">
+                        <code key={ index } className={ `px-2 py-1 rounded text-sm font-mono font-bold ${isDark
+                            ? 'bg-gray-700 text-blue-300'
+                            : 'bg-gray-200 text-blue-700'
+                            }` }>
                             { codeContent }
                         </code>
                     );
@@ -270,9 +273,12 @@ const PythonCodeWriter = () => {
         const parts = text.split('`');
         return parts.map((part, index) => {
             if (index % 2 === 1) {
-                // This is inside backticks - render as code
+                // This is inside backticks - render as code with theme-aware styling
                 return (
-                    <code key={ index } className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded text-sm font-mono">
+                    <code key={ index } className={ `px-2 py-1 rounded text-sm font-mono font-bold ${isDark
+                        ? 'bg-gray-700 text-blue-300'
+                        : 'bg-gray-200 text-blue-700'
+                        }` }>
                         { part }
                     </code>
                 );
@@ -292,7 +298,7 @@ const PythonCodeWriter = () => {
         return parts.map((part, index) => {
             if (index % 2 === 1) {
                 // This is inside ** - render as bold
-                return <strong key={ index } className="font-semibold">{ part }</strong>;
+                return <strong key={ index } className="font-bold text-blue-600 dark:text-blue-400">{ part }</strong>;
             } else {
                 return part;
             }
@@ -425,8 +431,8 @@ const PythonCodeWriter = () => {
                             <button
                                 onClick={ copyToClipboard }
                                 className={ `flex items-center space-x-2 px-3 py-1.5 rounded-lg transition-all backdrop-blur-sm ${copied
-                                        ? 'bg-green-500/80 text-white'
-                                        : 'hover:bg-opacity-80'
+                                    ? 'bg-green-500/80 text-white'
+                                    : 'hover:bg-opacity-80'
                                     }` }
                             >
                                 { copied ? <Check size={ 16 } /> : <Copy size={ 16 } /> }
@@ -477,8 +483,8 @@ const PythonCodeWriter = () => {
                             onClick={ handleSubmit }
                             disabled={ isLoading || !userInput.trim() }
                             className={ `px-6 py-3 rounded-xl font-medium transition-all flex items-center space-x-2 backdrop-blur-sm ${isLoading || !userInput.trim()
-                                    ? 'bg-gray-300/50 cursor-not-allowed'
-                                    : 'bg-blue-500/80 hover:bg-blue-600/80 shadow-lg hover:shadow-xl transform hover:scale-105'
+                                ? 'bg-gray-300/50 cursor-not-allowed'
+                                : 'bg-blue-500/80 hover:bg-blue-600/80 shadow-lg hover:shadow-xl transform hover:scale-105'
                                 }` }
                         >
                             { isLoading ? (
