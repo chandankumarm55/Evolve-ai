@@ -17,34 +17,23 @@ import {
     Database,
     Settings
 } from 'lucide-react';
-
 const ResultsPanel = ({ loading, error, response, title, description }) => {
-    const [copied, setCopied] = useState(false);
+    const [activeTab, setActiveTab] = useState('sql');
+    const [runResults, setRunResults] = useState(null);
+    const [isRunning, setIsRunning] = useState(false);
 
-    const copyToClipboard = (text) => {
-        navigator.clipboard.writeText(text);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-    };
-
-    const downloadFile = (content, filename) => {
-        const blob = new Blob([content], { type: 'text/plain' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-    };
-
-    const formatSQL = (sql) => {
-        if (!sql) return '';
-        return sql
-            .replace(/\b(SELECT|FROM|WHERE|JOIN|LEFT JOIN|RIGHT JOIN|INNER JOIN|ORDER BY|GROUP BY|HAVING|INSERT INTO|UPDATE|DELETE|CREATE TABLE|ALTER TABLE|DROP TABLE)\b/gi, '\n$1')
-            .replace(/,/g, ',\n  ')
-            .trim();
+    const handleRunSQL = async () => {
+        setIsRunning(true);
+        // Simulate query execution
+        setTimeout(() => {
+            setRunResults({
+                success: true,
+                message: "Query executed successfully!",
+                rowsAffected: 5,
+                executionTime: "0.023s"
+            });
+            setIsRunning(false);
+        }, 1500);
     };
 
     const renderERDiagram = (diagram) => {
@@ -56,6 +45,12 @@ const ResultsPanel = ({ loading, error, response, title, description }) => {
         );
     };
 
+    const tabs = [
+        { id: 'sql', label: 'SQL Code', icon: Code, show: response?.data?.sql },
+        { id: 'diagram', label: 'ER Diagram', icon: GitBranch, show: response?.data?.erDiagram },
+        { id: 'tips', label: 'Tips', icon: Lightbulb, show: response?.data?.tips }
+    ];
+
     return (
         <Card>
             <CardHeader>
@@ -63,9 +58,7 @@ const ResultsPanel = ({ loading, error, response, title, description }) => {
                     <FileText className="w-5 h-5" />
                     { title }
                 </CardTitle>
-                <CardDescription>
-                    { description }
-                </CardDescription>
+                <CardDescription>{ description }</CardDescription>
             </CardHeader>
             <CardContent>
                 { loading && (
@@ -85,112 +78,109 @@ const ResultsPanel = ({ loading, error, response, title, description }) => {
 
                 { response && response.data && (
                     <div className="space-y-4">
-                        { response.data.sql && (
-                            <div>
-                                <div className="flex items-center justify-between mb-2">
-                                    <h3 className="font-semibold flex items-center gap-2">
-                                        <Code className="w-4 h-4" />
-                                        SQL Code
-                                    </h3>
-                                    <div className="flex gap-2">
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={ () => copyToClipboard(response.data.sql) }
-                                        >
-                                            { copied ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" /> }
-                                        </Button>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={ () => downloadFile(response.data.sql, 'generated.sql') }
-                                        >
-                                            <Download className="w-4 h-4" />
-                                        </Button>
-                                    </div>
-                                </div>
-                                <ScrollArea className="h-64 w-full">
-                                    <pre className="bg-slate-900 text-green-400 p-4 rounded text-sm overflow-x-auto">
-                                        <code>{ formatSQL(response.data.sql) }</code>
-                                    </pre>
-                                </ScrollArea>
-                            </div>
-                        ) }
+                        {/* Tab Navigation */ }
+                        <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
+                            { tabs.filter(tab => tab.show).map((tab) => {
+                                const Icon = tab.icon;
+                                return (
+                                    <button
+                                        key={ tab.id }
+                                        onClick={ () => setActiveTab(tab.id) }
+                                        className={ `flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === tab.id
+                                                ? 'bg-white text-blue-600 shadow-sm'
+                                                : 'text-gray-600 hover:text-gray-900'
+                                            }` }
+                                    >
+                                        <Icon className="w-4 h-4" />
+                                        { tab.label }
+                                    </button>
+                                );
+                            }) }
+                        </div>
 
-                        { response.data.schema && (
-                            <div>
-                                <h3 className="font-semibold mb-2 flex items-center gap-2">
-                                    <Database className="w-4 h-4" />
-                                    Database Schema
-                                </h3>
-                                <ScrollArea className="h-96 w-full">
-                                    <pre className="bg-slate-900 text-green-400 p-4 rounded text-sm">
-                                        <code>{ response.data.schema }</code>
-                                    </pre>
-                                </ScrollArea>
-                            </div>
-                        ) }
-
-                        { response.data.original && response.data.optimized && (
+                        {/* Tab Content */ }
+                        { activeTab === 'sql' && response.data.sql && (
                             <div className="space-y-4">
-                                <div>
-                                    <h3 className="font-semibold mb-2">Original Query</h3>
-                                    <pre className="bg-gray-100 p-3 rounded text-sm font-mono">
-                                        { response.data.original }
-                                    </pre>
-                                </div>
-                                <div>
-                                    <h3 className="font-semibold mb-2">Optimized Version</h3>
-                                    <ScrollArea className="h-64 w-full">
-                                        <pre className="bg-slate-900 text-green-400 p-4 rounded text-sm">
-                                            <code>{ response.data.optimized }</code>
-                                        </pre>
-                                    </ScrollArea>
-                                </div>
+                                <MonacoEditor
+                                    value={ response.data.sql }
+                                    language="sql"
+                                    height="400px"
+                                    readOnly={ true }
+                                    onRun={ handleRunSQL }
+                                />
+
+                                {/* Run Results */ }
+                                { (runResults || isRunning) && (
+                                    <div className="mt-4">
+                                        <h4 className="font-medium mb-2 flex items-center gap-2">
+                                            <Play className="w-4 h-4" />
+                                            Execution Results
+                                        </h4>
+                                        { isRunning ? (
+                                            <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded">
+                                                <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+                                                <span className="text-blue-700">Executing query...</span>
+                                            </div>
+                                        ) : runResults && (
+                                            <div className={ `p-3 rounded border ${runResults.success
+                                                    ? 'bg-green-50 border-green-200'
+                                                    : 'bg-red-50 border-red-200'
+                                                }` }>
+                                                <div className="flex items-center gap-2 text-sm">
+                                                    { runResults.success ? (
+                                                        <CheckCircle className="w-4 h-4 text-green-600" />
+                                                    ) : (
+                                                        <AlertCircle className="w-4 h-4 text-red-600" />
+                                                    ) }
+                                                    <span className={ runResults.success ? 'text-green-700' : 'text-red-700' }>
+                                                        { runResults.message }
+                                                    </span>
+                                                </div>
+                                                { runResults.success && (
+                                                    <div className="mt-2 text-xs text-gray-600 space-y-1">
+                                                        <div>Rows affected: { runResults.rowsAffected }</div>
+                                                        <div>Execution time: { runResults.executionTime }</div>
+                                                    </div>
+                                                ) }
+                                            </div>
+                                        ) }
+                                    </div>
+                                ) }
                             </div>
                         ) }
 
-                        { response.data.diagram && (
+                        { activeTab === 'diagram' && response.data.erDiagram && (
                             <div>
-                                <h3 className="font-semibold mb-2 flex items-center gap-2">
+                                <h3 className="font-semibold mb-3 flex items-center gap-2">
                                     <GitBranch className="w-4 h-4" />
                                     ER Diagram
                                 </h3>
                                 <ScrollArea className="h-96 w-full">
-                                    { renderERDiagram(response.data.diagram) }
+                                    { renderERDiagram(response.data.erDiagram) }
                                 </ScrollArea>
                             </div>
                         ) }
 
-                        { response.data.erDiagram && (
+                        { activeTab === 'tips' && response.data.tips && (
                             <div>
-                                <h3 className="font-semibold mb-2 flex items-center gap-2">
-                                    <GitBranch className="w-4 h-4" />
-                                    ER Diagram
-                                </h3>
-                                { renderERDiagram(response.data.erDiagram) }
-                            </div>
-                        ) }
-
-                        { response.data.tips && (
-                            <div>
-                                <h3 className="font-semibold mb-2 flex items-center gap-2">
+                                <h3 className="font-semibold mb-3 flex items-center gap-2">
                                     <Lightbulb className="w-4 h-4" />
-                                    { response.data.sql ? 'Optimization Tips' : 'Expert Tips' }
+                                    Optimization Tips
                                 </h3>
-                                <div className="bg-yellow-50 border border-yellow-200 rounded p-4">
-                                    <pre className="whitespace-pre-wrap text-sm">{ response.data.tips }</pre>
+                                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                                    <pre className="whitespace-pre-wrap text-sm text-gray-700">{ response.data.tips }</pre>
                                 </div>
                             </div>
                         ) }
 
+                        {/* Metadata */ }
                         { response.metadata && (
                             <div className="flex flex-wrap gap-2 pt-4 border-t">
-                                <Badge variant="outline">
+                                <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
                                     <Database className="w-3 h-3 mr-1" />
                                     { response.metadata.databaseType?.toUpperCase() }
                                 </Badge>
-                                <Badge variant="outline">
+                                <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
                                     <Settings className="w-3 h-3 mr-1" />
                                     { response.metadata.tokenUsage?.completion_tokens } tokens
                                 </Badge>
