@@ -17,180 +17,148 @@ import {
     Database,
     Settings
 } from 'lucide-react';
-const ResultsPanel = ({ loading, error, response, title, description }) => {
-    const [activeTab, setActiveTab] = useState('sql');
-    const [runResults, setRunResults] = useState(null);
-    const [isRunning, setIsRunning] = useState(false);
 
-    const handleRunSQL = async () => {
-        setIsRunning(true);
-        // Simulate query execution
-        setTimeout(() => {
-            setRunResults({
-                success: true,
-                message: "Query executed successfully!",
-                rowsAffected: 5,
-                executionTime: "0.023s"
-            });
-            setIsRunning(false);
-        }, 1500);
-    };
-
-    const renderERDiagram = (diagram) => {
-        if (!diagram) return null;
-        return (
-            <div className="font-mono text-sm whitespace-pre-wrap bg-slate-50 p-4 rounded border overflow-x-auto">
-                { diagram }
-            </div>
-        );
-    };
-
-    const tabs = [
-        { id: 'sql', label: 'SQL Code', icon: Code, show: response?.data?.sql },
-        { id: 'diagram', label: 'ER Diagram', icon: GitBranch, show: response?.data?.erDiagram },
-        { id: 'tips', label: 'Tips', icon: Lightbulb, show: response?.data?.tips }
-    ];
-
-    return (
-        <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                    <FileText className="w-5 h-5" />
-                    { title }
-                </CardTitle>
-                <CardDescription>{ description }</CardDescription>
-            </CardHeader>
-            <CardContent>
-                { loading && (
-                    <div className="flex items-center justify-center py-8">
-                        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-                        <span className="ml-2">Processing...</span>
-                    </div>
-                ) }
-
-                { error && (
-                    <Alert className="border-red-200 bg-red-50">
-                        <AlertCircle className="h-4 w-4 text-red-600" />
-                        <AlertTitle className="text-red-800">Error</AlertTitle>
-                        <AlertDescription className="text-red-700">{ error }</AlertDescription>
-                    </Alert>
-                ) }
-
-                { response && response.data && (
-                    <div className="space-y-4">
-                        {/* Tab Navigation */ }
-                        <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
-                            { tabs.filter(tab => tab.show).map((tab) => {
-                                const Icon = tab.icon;
-                                return (
-                                    <button
-                                        key={ tab.id }
-                                        onClick={ () => setActiveTab(tab.id) }
-                                        className={ `flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === tab.id
-                                                ? 'bg-white text-blue-600 shadow-sm'
-                                                : 'text-gray-600 hover:text-gray-900'
-                                            }` }
-                                    >
-                                        <Icon className="w-4 h-4" />
-                                        { tab.label }
-                                    </button>
-                                );
-                            }) }
+// Mock ResultsPanel component
+const ResultsPanel = ({ loading, error, response, title, description }) => (
+    <Card>
+        <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+                <Database className="w-5 h-5" />
+                { title }
+            </CardTitle>
+            <CardDescription>{ description }</CardDescription>
+        </CardHeader>
+        <CardContent>
+            { loading && (
+                <div className="flex items-center justify-center py-12">
+                    <div className="text-center space-y-4">
+                        <Loader2 className="w-12 h-12 animate-spin text-blue-500 mx-auto" />
+                        <p className="text-gray-600">Generating ER Diagram...</p>
+                        <div className="w-48 bg-gray-200 rounded-full h-2 mx-auto">
+                            <div className="bg-blue-500 h-2 rounded-full animate-pulse" style={ { width: '60%' } }></div>
                         </div>
+                    </div>
+                </div>
+            ) }
 
-                        {/* Tab Content */ }
-                        { activeTab === 'sql' && response.data.sql && (
-                            <div className="space-y-4">
-                                <MonacoEditor
-                                    value={ response.data.sql }
-                                    language="sql"
-                                    height="400px"
-                                    readOnly={ true }
-                                    onRun={ handleRunSQL }
-                                />
+            { error && (
+                <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <div className="flex items-center gap-2 text-red-700 mb-2">
+                        <AlertCircle className="w-5 h-5" />
+                        <h3 className="font-medium">Error</h3>
+                    </div>
+                    <p className="text-red-600">{ error }</p>
+                </div>
+            ) }
 
-                                {/* Run Results */ }
-                                { (runResults || isRunning) && (
-                                    <div className="mt-4">
-                                        <h4 className="font-medium mb-2 flex items-center gap-2">
-                                            <Play className="w-4 h-4" />
-                                            Execution Results
-                                        </h4>
-                                        { isRunning ? (
-                                            <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded">
-                                                <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
-                                                <span className="text-blue-700">Executing query...</span>
-                                            </div>
-                                        ) : runResults && (
-                                            <div className={ `p-3 rounded border ${runResults.success
-                                                    ? 'bg-green-50 border-green-200'
-                                                    : 'bg-red-50 border-red-200'
-                                                }` }>
-                                                <div className="flex items-center gap-2 text-sm">
-                                                    { runResults.success ? (
-                                                        <CheckCircle className="w-4 h-4 text-green-600" />
-                                                    ) : (
-                                                        <AlertCircle className="w-4 h-4 text-red-600" />
-                                                    ) }
-                                                    <span className={ runResults.success ? 'text-green-700' : 'text-red-700' }>
-                                                        { runResults.message }
-                                                    </span>
+            { response && (
+                <div className="space-y-6">
+                    {/* ER Diagram Display */ }
+                    { response.diagram && (
+                        <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-lg font-semibold flex items-center gap-2">
+                                    <GitBranch className="w-5 h-5" />
+                                    ER Diagram
+                                </h3>
+                                <div className="flex gap-2">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={ () => navigator.clipboard.writeText(response.diagram) }
+                                    >
+                                        <Copy className="w-4 h-4 mr-1" />
+                                        Copy
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={ () => {
+                                            const blob = new Blob([response.diagram], { type: 'text/plain' });
+                                            const url = URL.createObjectURL(blob);
+                                            const a = document.createElement('a');
+                                            a.href = url;
+                                            a.download = 'er-diagram.txt';
+                                            a.click();
+                                            URL.revokeObjectURL(url);
+                                        } }
+                                    >
+                                        <Download className="w-4 h-4 mr-1" />
+                                        Download
+                                    </Button>
+                                </div>
+                            </div>
+                            <div className="bg-gray-50 border rounded-lg p-4 font-mono text-sm overflow-x-auto">
+                                <pre className="whitespace-pre-wrap">{ response.diagram }</pre>
+                            </div>
+                        </div>
+                    ) }
+
+                    {/* Tables Information */ }
+                    { response.tables && (
+                        <div className="space-y-3">
+                            <h3 className="text-lg font-semibold flex items-center gap-2">
+                                <Table className="w-5 h-5" />
+                                Tables ({ response.tables.length })
+                            </h3>
+                            <div className="grid gap-4">
+                                { response.tables.map((table, index) => (
+                                    <div key={ index } className="border rounded-lg p-4 bg-white">
+                                        <h4 className="font-medium text-lg mb-2">{ table.name }</h4>
+                                        { table.columns && (
+                                            <div className="space-y-2">
+                                                <p className="text-sm font-medium text-gray-600">Columns:</p>
+                                                <div className="grid gap-1">
+                                                    { table.columns.map((column, colIndex) => (
+                                                        <div key={ colIndex } className="flex items-center justify-between bg-gray-50 px-3 py-1 rounded text-sm">
+                                                            <span className="font-mono">{ column.name }</span>
+                                                            <span className="text-gray-500">{ column.type }</span>
+                                                        </div>
+                                                    )) }
                                                 </div>
-                                                { runResults.success && (
-                                                    <div className="mt-2 text-xs text-gray-600 space-y-1">
-                                                        <div>Rows affected: { runResults.rowsAffected }</div>
-                                                        <div>Execution time: { runResults.executionTime }</div>
-                                                    </div>
-                                                ) }
                                             </div>
                                         ) }
                                     </div>
-                                ) }
+                                )) }
                             </div>
-                        ) }
+                        </div>
+                    ) }
 
-                        { activeTab === 'diagram' && response.data.erDiagram && (
-                            <div>
-                                <h3 className="font-semibold mb-3 flex items-center gap-2">
-                                    <GitBranch className="w-4 h-4" />
-                                    ER Diagram
-                                </h3>
-                                <ScrollArea className="h-96 w-full">
-                                    { renderERDiagram(response.data.erDiagram) }
-                                </ScrollArea>
+                    {/* Relationships */ }
+                    { response.relationships && response.relationships.length > 0 && (
+                        <div className="space-y-3">
+                            <h3 className="text-lg font-semibold">Relationships ({ response.relationships.length })</h3>
+                            <div className="space-y-2">
+                                { response.relationships.map((rel, index) => (
+                                    <div key={ index } className="flex items-center justify-between bg-blue-50 border border-blue-200 px-4 py-2 rounded-lg">
+                                        <span className="font-medium">{ rel.from }</span>
+                                        <span className="text-blue-600 font-mono text-sm">{ rel.type || 'relates to' }</span>
+                                        <span className="font-medium">{ rel.to }</span>
+                                    </div>
+                                )) }
                             </div>
-                        ) }
+                        </div>
+                    ) }
 
-                        { activeTab === 'tips' && response.data.tips && (
-                            <div>
-                                <h3 className="font-semibold mb-3 flex items-center gap-2">
-                                    <Lightbulb className="w-4 h-4" />
-                                    Optimization Tips
-                                </h3>
-                                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                                    <pre className="whitespace-pre-wrap text-sm text-gray-700">{ response.data.tips }</pre>
-                                </div>
-                            </div>
-                        ) }
-
-                        {/* Metadata */ }
-                        { response.metadata && (
-                            <div className="flex flex-wrap gap-2 pt-4 border-t">
-                                <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                                    <Database className="w-3 h-3 mr-1" />
-                                    { response.metadata.databaseType?.toUpperCase() }
-                                </Badge>
-                                <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
-                                    <Settings className="w-3 h-3 mr-1" />
-                                    { response.metadata.tokenUsage?.completion_tokens } tokens
-                                </Badge>
-                            </div>
-                        ) }
+                    {/* Success Message */ }
+                    <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                        <div className="flex items-center gap-2 text-green-700">
+                            <CheckCircle className="w-5 h-5" />
+                            <span className="font-medium">ER Diagram generated successfully!</span>
+                        </div>
                     </div>
-                ) }
-            </CardContent>
-        </Card>
-    );
-};
+                </div>
+            ) }
+
+            { !loading && !error && !response && (
+                <div className="text-center py-12 text-gray-500">
+                    <GitBranch className="w-16 h-16 mx-auto mb-4 opacity-30" />
+                    <p className="text-lg mb-2">No ER Diagram Generated</p>
+                    <p className="text-sm">Fill in the table and relationship information, then click generate</p>
+                </div>
+            ) }
+        </CardContent>
+    </Card>
+);
 
 export default ResultsPanel;
