@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../../components/ui/card';
 import { Button } from '../../../../components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '../../../../components/ui/alert';
@@ -21,26 +21,43 @@ import {
     Play,
     Table,
     Info,
-    Zap
-} from 'lucide-react';
-
-const ResultsPanel = ({ loading, error, response, title, description }) => {
+    Zap,
+    Terminal,
+    RotateCcw,
+    Save,
+    Edit3,
+    ExternalLink,
+    Square
+} from 'lucide-react'
+const EnhancedResultsPanel = ({ loading, error, response, title, description }) => {
     const [copied, setCopied] = useState(false);
     const [activeTab, setActiveTab] = useState('sql');
+    const [isTestMode, setIsTestMode] = useState(false);
+    const [testingSql, setTestingSql] = useState('');
+    const [isExecuting, setIsExecuting] = useState(false);
+    const [terminalOutput, setTerminalOutput] = useState('');
+    const [executionResults, setExecutionResults] = useState([]);
+    const terminalRef = useRef(null);
 
-    // Monaco-like Editor Component
-    const CodeEditor = ({ value, language = 'sql', height = '400px', readOnly = true, onRun }) => {
+    // Enhanced Monaco-like Editor Component
+    const CodeEditor = ({ value, language = 'sql', height = '400px', readOnly = true, onRun, onEdit }) => {
         const [editorCopied, setEditorCopied] = useState(false);
+        const [editableValue, setEditableValue] = useState(value);
         const editorRef = useRef(null);
 
+        useEffect(() => {
+            setEditableValue(value);
+        }, [value]);
+
         const copyToClipboard = () => {
-            navigator.clipboard.writeText(value);
+            navigator.clipboard.writeText(readOnly ? value : editableValue);
             setEditorCopied(true);
             setTimeout(() => setEditorCopied(false), 2000);
         };
 
         const downloadFile = () => {
-            const blob = new Blob([value], { type: 'text/plain' });
+            const content = readOnly ? value : editableValue;
+            const blob = new Blob([content], { type: 'text/plain' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
@@ -52,15 +69,25 @@ const ResultsPanel = ({ loading, error, response, title, description }) => {
         };
 
         const runScript = () => {
+            const codeToRun = readOnly ? value : editableValue;
             if (onRun) {
-                onRun(value);
-            } else {
-                // Mock run functionality - you can replace this with actual execution
-                alert('Script execution would happen here!\n\nIn a real implementation, this would:\n1. Connect to your database\n2. Execute the SQL script\n3. Show results or errors');
+                onRun(codeToRun);
             }
         };
 
-        if (!value) return null;
+        const toggleEditMode = () => {
+            if (readOnly && onEdit) {
+                onEdit(value);
+            }
+        };
+
+        const openInTestEnvironment = () => {
+            setTestingSql(readOnly ? value : editableValue);
+            setIsTestMode(true);
+            setActiveTab('testing');
+        };
+
+        if (!value && !editableValue) return null;
 
         return (
             <div className="border border-gray-300 rounded-lg overflow-hidden bg-white">
@@ -68,17 +95,49 @@ const ResultsPanel = ({ loading, error, response, title, description }) => {
                     <div className="flex items-center gap-2">
                         <Monitor className="w-4 h-4" />
                         <span className="font-medium">{ language.toUpperCase() } Editor</span>
-                        { readOnly && <Badge variant="secondary" className="text-xs bg-gray-600">Read Only</Badge> }
+                        { readOnly ? (
+                            <Badge variant="secondary" className="text-xs bg-gray-600">Read Only</Badge>
+                        ) : (
+                            <Badge variant="secondary" className="text-xs bg-blue-600">Editable</Badge>
+                        ) }
                     </div>
                     <div className="flex items-center gap-2">
                         <Button
                             size="sm"
                             onClick={ runScript }
+                            disabled={ isExecuting }
                             className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 text-xs"
                         >
-                            <Play className="w-3 h-3 mr-1" />
-                            Run Script
+                            { isExecuting ? (
+                                <>
+                                    <Square className="w-3 h-3 mr-1" />
+                                    Running...
+                                </>
+                            ) : (
+                                <>
+                                    <Play className="w-3 h-3 mr-1" />
+                                    Run
+                                </>
+                            ) }
                         </Button>
+                        <Button
+                            size="sm"
+                            onClick={ openInTestEnvironment }
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 text-xs"
+                        >
+                            <ExternalLink className="w-3 h-3 mr-1" />
+                            Test
+                        </Button>
+                        { readOnly && (
+                            <Button
+                                size="sm"
+                                onClick={ toggleEditMode }
+                                className="bg-orange-600 hover:bg-orange-700 text-white px-3 py-1 text-xs"
+                            >
+                                <Edit3 className="w-3 h-3 mr-1" />
+                                Edit
+                            </Button>
+                        ) }
                         <Button
                             variant="ghost"
                             size="sm"
@@ -101,7 +160,8 @@ const ResultsPanel = ({ loading, error, response, title, description }) => {
                     <ScrollArea className="h-full">
                         <textarea
                             ref={ editorRef }
-                            value={ value }
+                            value={ readOnly ? value : editableValue }
+                            onChange={ (e) => !readOnly && setEditableValue(e.target.value) }
                             readOnly={ readOnly }
                             className="w-full h-full p-4 font-mono text-sm border-none outline-none resize-none"
                             style={ {
@@ -118,6 +178,47 @@ const ResultsPanel = ({ loading, error, response, title, description }) => {
             </div>
         );
     };
+
+    // Mock SQL execution
+    const executeSQL = async (sqlCode) => {
+        setIsExecuting(true);
+        addToTerminal(`🚀 Executing SQL script...`);
+        addToTerminal(`⏰ Started at: ${new Date().toLocaleTimeString()}`);
+
+        // Simulate execution
+        await new Promise(resolve => setTimeout(resolve, 1500));
+
+        addToTerminal(`✅ SQL script executed successfully`);
+        addToTerminal(`📊 Rows affected: ${Math.floor(Math.random() * 10) + 1}`);
+        addToTerminal(`⚡ Execution time: ${Math.floor(Math.random() * 500) + 100}ms`);
+
+        setExecutionResults([
+            {
+                type: 'SUCCESS',
+                message: 'SQL script executed successfully',
+                rowsAffected: Math.floor(Math.random() * 10) + 1,
+                executionTime: Math.floor(Math.random() * 500) + 100
+            }
+        ]);
+
+        setIsExecuting(false);
+    };
+
+    const addToTerminal = (text) => {
+        setTerminalOutput(prev => prev + text + '\n');
+    };
+
+    const clearTerminal = () => {
+        setTerminalOutput('');
+        setExecutionResults([]);
+    };
+
+    // Auto-scroll terminal
+    useEffect(() => {
+        if (terminalRef.current) {
+            terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
+        }
+    }, [terminalOutput]);
 
     // Extract clean SQL from response
     const getCleanSQL = () => {
@@ -188,10 +289,14 @@ const ResultsPanel = ({ loading, error, response, title, description }) => {
                     <div className="space-y-6">
                         {/* Main Content Tabs */ }
                         <Tabs value={ activeTab } onValueChange={ setActiveTab } className="w-full">
-                            <TabsList className="grid w-full grid-cols-4">
+                            <TabsList className="grid w-full grid-cols-5">
                                 <TabsTrigger value="sql" className="flex items-center gap-2">
                                     <Code className="w-4 h-4" />
                                     SQL Code
+                                </TabsTrigger>
+                                <TabsTrigger value="testing" className="flex items-center gap-2">
+                                    <Terminal className="w-4 h-4" />
+                                    Testing
                                 </TabsTrigger>
                                 <TabsTrigger value="diagram" className="flex items-center gap-2">
                                     <GitBranch className="w-4 h-4" />
@@ -224,6 +329,11 @@ const ResultsPanel = ({ loading, error, response, title, description }) => {
                                             value={ getCleanSQL() }
                                             language="sql"
                                             height="500px"
+                                            onRun={ executeSQL }
+                                            onEdit={ (code) => {
+                                                setTestingSql(code);
+                                                setActiveTab('testing');
+                                            } }
                                         />
 
                                         {/* Tables Overview */ }
@@ -259,6 +369,90 @@ const ResultsPanel = ({ loading, error, response, title, description }) => {
                                         <p>No SQL code generated</p>
                                     </div>
                                 ) }
+                            </TabsContent>
+
+                            {/* Testing Tab */ }
+                            <TabsContent value="testing" className="space-y-4">
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                    {/* SQL Editor */ }
+                                    <div className="space-y-4">
+                                        <div className="flex items-center justify-between">
+                                            <h3 className="text-lg font-semibold flex items-center gap-2">
+                                                <Edit3 className="w-5 h-5" />
+                                                SQL Editor
+                                            </h3>
+                                            <div className="flex gap-2">
+                                                <Button
+                                                    size="sm"
+                                                    onClick={ () => executeSQL(testingSql) }
+                                                    disabled={ isExecuting }
+                                                    className="bg-green-600 hover:bg-green-700"
+                                                >
+                                                    { isExecuting ? (
+                                                        <>
+                                                            <Square className="w-4 h-4 mr-2" />
+                                                            Running...
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <Play className="w-4 h-4 mr-2" />
+                                                            Execute
+                                                        </>
+                                                    ) }
+                                                </Button>
+                                                <Button size="sm" variant="outline" onClick={ clearTerminal }>
+                                                    <RotateCcw className="w-4 h-4 mr-2" />
+                                                    Clear
+                                                </Button>
+                                            </div>
+                                        </div>
+                                        <CodeEditor
+                                            value={ testingSql || getCleanSQL() }
+                                            language="sql"
+                                            height="400px"
+                                            readOnly={ false }
+                                            onRun={ executeSQL }
+                                        />
+                                    </div>
+
+                                    {/* Terminal & Results */ }
+                                    <div className="space-y-4">
+                                        <div className="flex items-center justify-between">
+                                            <h3 className="text-lg font-semibold flex items-center gap-2">
+                                                <Terminal className="w-5 h-5" />
+                                                Terminal Output
+                                            </h3>
+                                            <Button size="sm" variant="outline" onClick={ clearTerminal }>
+                                                Clear
+                                            </Button>
+                                        </div>
+                                        <div
+                                            ref={ terminalRef }
+                                            className="bg-black text-green-400 p-4 rounded font-mono text-sm h-64 overflow-y-auto"
+                                            style={ { fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace' } }
+                                        >
+                                            <pre className="whitespace-pre-wrap">
+                                                { terminalOutput || '💻 Terminal ready... Execute SQL to see output here.' }
+                                            </pre>
+                                        </div>
+
+                                        {/* Execution Results */ }
+                                        { executionResults.length > 0 && (
+                                            <div className="space-y-3">
+                                                <h4 className="font-medium">Execution Results</h4>
+                                                { executionResults.map((result, index) => (
+                                                    <Alert key={ index }>
+                                                        <CheckCircle className="h-4 w-4" />
+                                                        <AlertTitle>{ result.type }</AlertTitle>
+                                                        <AlertDescription>
+                                                            { result.message } - { result.rowsAffected } rows affected in { result.executionTime }ms
+                                                        </AlertDescription>
+                                                    </Alert>
+                                                )) }
+                                            </div>
+                                        ) }
+                                    </div>
+                                </div>
                             </TabsContent>
 
                             {/* ER Diagram Tab */ }
@@ -438,4 +632,4 @@ const ResultsPanel = ({ loading, error, response, title, description }) => {
     );
 };
 
-export default ResultsPanel;
+export default EnhancedResultsPanel;

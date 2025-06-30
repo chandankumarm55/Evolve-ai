@@ -105,50 +105,7 @@ const SQLScriptWriter = () => {
                 </p>
             </div>
 
-            <Tabs value={ activeTab } onValueChange={ setActiveTab } className="w-full">
-                <TabsList className="grid w-full grid-cols-5">
-                    <TabsTrigger value="generate" className="flex items-center gap-2">
-                        <Code className="w-4 h-4" />
-                        Generate SQL
-                    </TabsTrigger>
-                    <TabsTrigger value="schema" className="flex items-center gap-2">
-                        <Database className="w-4 h-4" />
-                        Schema
-                    </TabsTrigger>
-                    <TabsTrigger value="optimize" className="flex items-center gap-2">
-                        <Zap className="w-4 h-4" />
-                        Optimize
-                    </TabsTrigger>
-                    <TabsTrigger value="diagram" className="flex items-center gap-2">
-                        <GitBranch className="w-4 h-4" />
-                        ER Diagram
-                    </TabsTrigger>
-                    <TabsTrigger value="tips" className="flex items-center gap-2">
-                        <Lightbulb className="w-4 h-4" />
-                        Tips
-                    </TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="generate">
-                    <GenerateSQLTab />
-                </TabsContent>
-
-                <TabsContent value="schema">
-                    <SchemaTab />
-                </TabsContent>
-
-                <TabsContent value="optimize">
-                    <OptimizeTab />
-                </TabsContent>
-
-                <TabsContent value="diagram">
-                    <ERDiagramTab />
-                </TabsContent>
-
-                <TabsContent value="tips">
-                    <TipsTab />
-                </TabsContent>
-            </Tabs>
+            <GenerateSQLTab />
         </div>
     );
 };
