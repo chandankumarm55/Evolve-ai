@@ -10,7 +10,7 @@ node_modules/
 .env.test
 .env.production
 
-client/.env
+Client/.env
 server/.env
 # Environment files
 .env
