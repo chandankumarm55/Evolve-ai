@@ -1,6 +1,7 @@
 import React from 'react';
 import { Label } from '../../../../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../../components/ui/select';
+import { useTheme } from '../../../../contexts/ThemeContext';
 
 const DatabaseSelector = ({ value, onChange, label }) => {
     const databases = [
@@ -11,23 +12,26 @@ const DatabaseSelector = ({ value, onChange, label }) => {
         { value: 'oracle', label: 'Oracle' }
     ];
 
+    const { theme } = useTheme();
+    const isDark = theme === 'dark';
+
     return (
         <div className="space-y-2">
             <Label>{ label }</Label>
-            <select
-                value={ value }
-                onChange={ (e) => onChange(e.target.value) }
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-                { databases.map((db) => (
-                    <option key={ db.value } value={ db.value }>
-                        { db.label }
-                    </option>
-                )) }
-            </select>
+            <Select value={ value } onValueChange={ onChange }>
+                <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select a database" />
+                </SelectTrigger>
+                <SelectContent className={ `bg-${isDark ? 'black' : 'white'} text-${isDark ? 'white' : 'black'}` }>
+                    { databases.map((db) => (
+                        <SelectItem key={ db.value } value={ db.value }>
+                            { db.label }
+                        </SelectItem>
+                    )) }
+                </SelectContent>
+            </Select>
         </div>
     );
 };
-
 
 export default DatabaseSelector;

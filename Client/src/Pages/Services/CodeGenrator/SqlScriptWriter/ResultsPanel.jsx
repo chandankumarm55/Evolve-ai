@@ -29,6 +29,7 @@ import {
     ExternalLink,
     Square
 } from 'lucide-react'
+
 const EnhancedResultsPanel = ({ loading, error, response, title, description }) => {
     const [copied, setCopied] = useState(false);
     const [activeTab, setActiveTab] = useState('sql');
@@ -467,7 +468,7 @@ const EnhancedResultsPanel = ({ loading, error, response, title, description }) 
                                         </div>
 
                                         {/* ER Diagram Display */ }
-                                        <div className="border border-gray-200 rounded-lg p-4 bg-gray-50 min-h-[400px]">
+                                        <div className="border">
                                             { typeof response.data.erDiagram === 'string' && response.data.erDiagram.startsWith('http') ? (
                                                 <img
                                                     src={ response.data.erDiagram }
@@ -475,7 +476,7 @@ const EnhancedResultsPanel = ({ loading, error, response, title, description }) 
                                                     className="max-w-full h-auto mx-auto"
                                                 />
                                             ) : (
-                                                <div className="bg-white rounded border p-4">
+                                                <div className="rounded border p-4">
                                                     <pre className="whitespace-pre-wrap text-sm font-mono overflow-x-auto">
                                                         { typeof response.data.erDiagram === 'string'
                                                             ? response.data.erDiagram

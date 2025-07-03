@@ -5,10 +5,6 @@ import { Code, Zap, GitBranch, Lightbulb } from 'lucide-react';
 
 // Import all tab components
 import GenerateSQLTab from './GenerateSQLTab';
-import SchemaTab from './SchemaTab';
-import OptimizeTab from './OptimizeTab';
-import ERDiagramTab from './ERDiagramTab';
-import TipsTab from './TipsTab';
 
 const SQLScriptWriter = () => {
     const MonacoEditor = ({ value, onChange, language = 'sql', height = '300px', readOnly = false, onRun }) => {

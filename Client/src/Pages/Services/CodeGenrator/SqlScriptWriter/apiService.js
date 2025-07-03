@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:3000/api/codewriter';
+const API_BASE_URL = `${VITE_BACKEND_URL}/api/codewriter`;
 
 export const makeApiCall = async(endpoint, data, setLoading, setError, setResponse) => {
     setLoading(true);

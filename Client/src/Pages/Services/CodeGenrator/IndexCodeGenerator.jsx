@@ -24,12 +24,6 @@ const CodeGenerator = () => {
                 </h1>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4">
-                    <button onClick={ () => navigate('/dashboard/codegenerator/react') }>
-                        <div className={ cardClass }>
-                            <FaReact className="text-4xl mb-2" style={ { color: '#61DAFB' } } />
-                            <h6 className="font-medium">React Code Writer</h6>
-                        </div>
-                    </button>
 
                     <button onClick={ () => navigate('/dashboard/codegenerator/htmlcssjs') }>
                         <div className={ cardClass }>
@@ -37,25 +31,19 @@ const CodeGenerator = () => {
                             <h6 className="font-medium">HTML, CSS, JS Writer</h6>
                         </div>
                     </button>
-                    <div className={ cardClass }>
-                        <FaNodeJs className="text-4xl mb-2" style={ { color: '#68A063' } } />
-                        <h6 className="font-medium">Node JS Code Writer</h6>
-                    </div>
+
 
                     <div className={ cardClass } onClick={ () => navigate('/dashboard/codegenerator/python') }>
                         <FaPython className="text-4xl mb-2" style={ { color: '#3776AB' } } />
                         <h6 className="font-medium">Python Code Writer</h6>
                     </div>
 
-                    <div className={ cardClass }>
+                    <div className={ cardClass } onClick={ () => navigate('/dashboard/codegenerator/sqlscript') }>
                         <AiOutlineConsoleSql className="text-4xl mb-2" style={ { color: '#F29111' } } />
                         <h6 className="font-medium">SQL Query Writer</h6>
                     </div>
 
-                    <div className={ cardClass }>
-                        <MdOutlinePhp className="text-4xl mb-2" style={ { color: '#777BB4' } } />
-                        <h6 className="font-medium">PHP Code Writer</h6>
-                    </div>
+
                 </div>
             </div>
         </div>

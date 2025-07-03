@@ -1,11 +1,21 @@
 import React, { useState, useRef, useCallback } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../../components/ui/card';
+import { Button } from '../../../../components/ui/button';
+import { Input } from '../../../../components/ui/input';
+import { Textarea } from '../../../../components/ui/textarea';
+import { Switch } from '../../../../components/ui/switch';
+import { Label } from '../../../../components/ui/label';
 import { Code, Loader2, GripVertical } from 'lucide-react';
+
+import DatabaseSelector from './DatabaseSelector';
+import ResultsPanel from './ResultsPanel';
+import { makeApiCall } from './apiService';
 
 const GenerateSQLTab = () => {
     const [loading, setLoading] = useState(false);
     const [response, setResponse] = useState(null);
     const [error, setError] = useState(null);
-    const [leftPanelWidth, setLeftPanelWidth] = useState(50); // Percentage
+    const [leftWidth, setLeftWidth] = useState(50);
     const [isResizing, setIsResizing] = useState(false);
     const containerRef = useRef(null);
 
@@ -18,220 +28,41 @@ const GenerateSQLTab = () => {
         fileName: ''
     });
 
-    // Mock API call function
-    const makeApiCall = (endpoint, data, setLoading, setError, setResponse) => {
-        setLoading(true);
-        setError(null);
-
-        setTimeout(() => {
-            setLoading(false);
-            setResponse({
-                sql: `-- Generated SQL for: ${data.prompt}\nCREATE TABLE users (\n    id INT PRIMARY KEY AUTO_INCREMENT,\n    username VARCHAR(50) UNIQUE NOT NULL,\n    email VARCHAR(100) UNIQUE NOT NULL,\n    password_hash VARCHAR(255) NOT NULL,\n    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP\n);\n\nCREATE TABLE user_roles (\n    id INT PRIMARY KEY AUTO_INCREMENT,\n    user_id INT,\n    role_name VARCHAR(50) NOT NULL,\n    FOREIGN KEY (user_id) REFERENCES users(id)\n);`,
-                tips: data.includeTips ? ["Add indexes on frequently queried columns", "Use proper data types for optimal storage"] : null,
-                diagram: data.includeERDiagram ? "ER Diagram would be generated here" : null
-            });
-        }, 2000);
-    };
-
     const handleGenerateSQL = () => {
         makeApiCall('/sqlcodegenerate', generateForm, setLoading, setError, setResponse);
     };
 
-    // Mock UI Components to match your original structure
-    const Card = ({ children }) => (
-        <div className="bg-white rounded-lg border shadow-sm h-full flex flex-col">
-            { children }
-        </div>
-    );
-
-    const CardHeader = ({ children }) => (
-        <div className="p-6 pb-4 border-b">
-            { children }
-        </div>
-    );
-
-    const CardTitle = ({ children, className }) => (
-        <h3 className={ `text-lg font-semibold ${className}` }>
-            { children }
-        </h3>
-    );
-
-    const CardDescription = ({ children }) => (
-        <p className="text-sm text-gray-600 mt-1">
-            { children }
-        </p>
-    );
-
-    const CardContent = ({ children, className }) => (
-        <div className={ `p-6 pt-4 flex-1 overflow-auto ${className}` }>
-            { children }
-        </div>
-    );
-
-    const Button = ({ children, onClick, disabled, className }) => (
-        <button
-            onClick={ onClick }
-            disabled={ disabled }
-            className={ `bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${className}` }
-        >
-            { children }
-        </button>
-    );
-
-    const Input = ({ placeholder, value, onChange }) => (
-        <input
-            type="text"
-            placeholder={ placeholder }
-            value={ value }
-            onChange={ onChange }
-            className="w-full p-2 border rounded-md"
-        />
-    );
-
-    const Textarea = ({ id, placeholder, value, onChange, rows }) => (
-        <textarea
-            id={ id }
-            placeholder={ placeholder }
-            value={ value }
-            onChange={ onChange }
-            rows={ rows }
-            className="w-full p-3 border rounded-md resize-none"
-        />
-    );
-
-    const Switch = ({ id, checked, onCheckedChange, className }) => (
-        <input
-            type="checkbox"
-            id={ id }
-            checked={ checked }
-            onChange={ (e) => onCheckedChange(e.target.checked) }
-            className="rounded"
-        />
-    );
-
-    const Label = ({ htmlFor, children }) => (
-        <label htmlFor={ htmlFor } className="block text-sm font-medium">
-            { children }
-        </label>
-    );
-
-    const DatabaseSelector = ({ value, onChange, label }) => (
-        <div className="space-y-2">
-            <Label>{ label }</Label>
-            <select
-                value={ value }
-                onChange={ (e) => onChange(e.target.value) }
-                className="w-full p-2 border rounded-md"
-            >
-                <option value="mysql">MySQL</option>
-                <option value="postgresql">PostgreSQL</option>
-                <option value="sqlite">SQLite</option>
-                <option value="mssql">SQL Server</option>
-            </select>
-        </div>
-    );
-
-    const ResultsPanel = ({ loading, error, response, title, description }) => {
-        return (
-            <div className="bg-white rounded-lg border shadow-sm h-full flex flex-col">
-                <div className="p-6 pb-4 border-b">
-                    <h3 className="text-lg font-semibold">{ title }</h3>
-                    <p className="text-sm text-gray-600 mt-1">{ description }</p>
-                </div>
-
-                <div className="p-6 pt-4 flex-1 overflow-auto">
-                    { loading && (
-                        <div className="flex items-center justify-center h-32">
-                            <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-                            <span className="ml-2">Generating SQL...</span>
-                        </div>
-                    ) }
-
-                    { error && (
-                        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                            <p className="text-red-600">Error: { error }</p>
-                        </div>
-                    ) }
-
-                    { response && !loading && (
-                        <div className="space-y-4">
-                            <div className="bg-gray-50 rounded-lg overflow-hidden">
-                                <div className="bg-gray-800 text-white px-4 py-2 flex items-center justify-between text-sm">
-                                    <div className="flex items-center gap-2">
-                                        <Code className="w-4 h-4" />
-                                        <span className="font-medium">Generated SQL</span>
-                                    </div>
-                                </div>
-                                <pre className="p-4 text-sm font-mono bg-gray-900 text-green-400 overflow-auto">
-                                    { response.sql }
-                                </pre>
-                            </div>
-
-                            { response.tips && (
-                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                                    <h4 className="font-semibold text-blue-800 mb-2">Optimization Tips:</h4>
-                                    <ul className="list-disc list-inside space-y-1 text-blue-700">
-                                        { response.tips.map((tip, index) => (
-                                            <li key={ index }>{ tip }</li>
-                                        )) }
-                                    </ul>
-                                </div>
-                            ) }
-
-                            { response.diagram && (
-                                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                                    <h4 className="font-semibold text-green-800 mb-2">ER Diagram:</h4>
-                                    <p className="text-green-700">{ response.diagram }</p>
-                                </div>
-                            ) }
-                        </div>
-                    ) }
-
-                    { !response && !loading && !error && (
-                        <div className="flex items-center justify-center h-32 text-gray-500">
-                            <div className="text-center">
-                                <Code className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                                <p>Generated SQL will appear here</p>
-                            </div>
-                        </div>
-                    ) }
-                </div>
-            </div>
-        );
-    };
-
-    // Resize handling
     const handleMouseDown = useCallback((e) => {
-        setIsResizing(true);
         e.preventDefault();
+        setIsResizing(true);
     }, []);
 
     const handleMouseMove = useCallback((e) => {
         if (!isResizing || !containerRef.current) return;
 
         const containerRect = containerRef.current.getBoundingClientRect();
-        const newWidth = ((e.clientX - containerRect.left) / containerRect.width) * 100;
+        const newLeftWidth = ((e.clientX - containerRect.left) / containerRect.width) * 100;
 
-        // Set minimum and maximum widths (25% to 75%)
-        const minWidth = 25;
-        const maxWidth = 75;
-
-        if (newWidth >= minWidth && newWidth <= maxWidth) {
-            setLeftPanelWidth(newWidth);
-        }
+        // Constrain between 20% and 80%
+        const constrainedWidth = Math.max(20, Math.min(80, newLeftWidth));
+        setLeftWidth(constrainedWidth);
     }, [isResizing]);
 
     const handleMouseUp = useCallback(() => {
         setIsResizing(false);
     }, []);
 
-    // Add event listeners
     React.useEffect(() => {
         if (isResizing) {
             document.addEventListener('mousemove', handleMouseMove);
             document.addEventListener('mouseup', handleMouseUp);
             document.body.style.cursor = 'col-resize';
             document.body.style.userSelect = 'none';
+        } else {
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+            document.body.style.cursor = '';
+            document.body.style.userSelect = '';
         }
 
         return () => {
@@ -243,17 +74,10 @@ const GenerateSQLTab = () => {
     }, [isResizing, handleMouseMove, handleMouseUp]);
 
     return (
-        <div
-            ref={ containerRef }
-            className="flex h-full gap-0"
-            style={ { minHeight: '600px' } }
-        >
-            {/* Left Panel - Card Component */ }
-            <div
-                style={ { width: `${leftPanelWidth}%` } }
-                className="pr-2"
-            >
-                <Card>
+        <div className="flex gap-2 h-full" ref={ containerRef }>
+            {/* Left part */ }
+            <div style={ { width: `${leftWidth}%` } } className="flex-shrink-0">
+                <Card className="h-full">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <Code className="w-5 h-5" />
@@ -287,6 +111,7 @@ const GenerateSQLTab = () => {
                                     id="include-er"
                                     checked={ generateForm.includeERDiagram }
                                     onCheckedChange={ (checked) => setGenerateForm({ ...generateForm, includeERDiagram: checked }) }
+                                    className="data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
                                 />
                                 <Label htmlFor="include-er">Include ER Diagram</Label>
                             </div>
@@ -296,6 +121,7 @@ const GenerateSQLTab = () => {
                                     id="include-tips"
                                     checked={ generateForm.includeTips }
                                     onCheckedChange={ (checked) => setGenerateForm({ ...generateForm, includeTips: checked }) }
+                                    className="data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
                                 />
                                 <Label htmlFor="include-tips">Include Optimization Tips</Label>
                             </div>
@@ -305,6 +131,7 @@ const GenerateSQLTab = () => {
                                     id="save-file"
                                     checked={ generateForm.saveToFile }
                                     onCheckedChange={ (checked) => setGenerateForm({ ...generateForm, saveToFile: checked }) }
+                                    className="data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
                                 />
                                 <Label htmlFor="save-file">Save to File</Label>
                             </div>
@@ -330,20 +157,17 @@ const GenerateSQLTab = () => {
                 </Card>
             </div>
 
-            {/* Resize Handle */ }
+            {/* Resizer */ }
             <div
-                className={ `w-4 cursor-col-resize select-none flex items-center justify-center transition-colors ${isResizing ? 'bg-blue-200' : 'hover:bg-gray-200'
+                className={ `flex items-center justify-center w-2 cursor-col-resize hover:bg-gray-200 transition-colors ${isResizing ? 'bg-gray-300' : 'bg-gray-100'
                     }` }
                 onMouseDown={ handleMouseDown }
             >
                 <GripVertical className="w-4 h-4 text-gray-400" />
             </div>
 
-            {/* Right Panel - ResultsPanel Component */ }
-            <div
-                style={ { width: `${100 - leftPanelWidth}%` } }
-                className="pl-2"
-            >
+            {/* Right part */ }
+            <div style={ { width: `${100 - leftWidth}%` } } className="flex-shrink-0">
                 <ResultsPanel
                     loading={ loading }
                     error={ error }
