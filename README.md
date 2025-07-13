@@ -75,23 +75,26 @@ Welcome to our AI-powered full stack web application built using the **MERN** st
    git clone https://github.com/chandankumarm55/Evolve-ai.git
    cd your-project
    ```
-   Frontend Setup
-   bashcd client
+2. **Frontend Setup
+   ```bashcd client
    npm install
    touch .env
+   ```
 
 # Add the required VITE\_ environment variables
-
+```
 npm run dev
-
-Backend Setup
-bashcd server
+```
+**Backend Setup
+```bashcd server
 npm install
 touch .env
+```
 
 # Add the required backend environment variables
-
+```
 npm run dev
+```
 
 Make sure both client and server are running and connected properly.
 
