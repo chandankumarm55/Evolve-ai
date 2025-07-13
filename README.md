@@ -75,7 +75,7 @@ Welcome to our AI-powered full stack web application built using the **MERN** st
    git clone https://github.com/chandankumarm55/Evolve-ai.git
    cd your-project
    ```
-2. **Frontend Setup
+2. **Frontend Setup**
    ```bashcd client
    npm install
    touch .env
@@ -85,7 +85,7 @@ Welcome to our AI-powered full stack web application built using the **MERN** st
 ```
 npm run dev
 ```
-**Backend Setup
+**Backend Setup**
 ```bashcd server
 npm install
 touch .env
