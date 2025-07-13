@@ -1,12 +1,17 @@
-import React, { useState } from 'react';
-import { Database } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Database, ArrowLeft, Monitor, Play, Copy, CheckCircle, Download } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../../components/ui/tabs';
+import { Button } from '../../../../components/ui/button';
+import { Badge } from '../../../../components/ui/badge';
 import { Code, Zap, GitBranch, Lightbulb } from 'lucide-react';
 
 // Import all tab components
 import GenerateSQLTab from './GenerateSQLTab';
 
 const SQLScriptWriter = () => {
+    const navigate = useNavigate();
+
     const MonacoEditor = ({ value, onChange, language = 'sql', height = '300px', readOnly = false, onRun }) => {
         const [copied, setCopied] = useState(false);
         const editorRef = useRef(null);
@@ -86,12 +91,26 @@ const SQLScriptWriter = () => {
             </div>
         );
     };
+
     const [activeTab, setActiveTab] = useState('generate');
+
+    const handleBackClick = () => {
+        navigate('/dashboard/codegenerator');
+    };
 
     return (
         <div className="max-w-7xl mx-auto pt-20 px-4 space-y-6">
             <div className="text-center space-y-4">
-                <div className="flex items-center justify-center gap-2">
+                <div className="flex items-center justify-center gap-2 relative">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={ handleBackClick }
+                        className="absolute left-0 flex items-center gap-2 hover:bg-gray-100"
+                    >
+                        <ArrowLeft className="w-4 h-4" />
+                        Back
+                    </Button>
                     <Database className="w-8 h-8 text-blue-600" />
                     <h1 className="text-3xl font-bold">SQL Script Writer</h1>
                 </div>

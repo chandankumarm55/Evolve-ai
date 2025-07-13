@@ -1,10 +1,10 @@
-const API_BASE_URL = `${VITE_BACKEND_URL}/api/codewriter`;
+const API_BASE_URL = `${import.meta.env.VITE_BACKEND_URL}/api/codewriter`;
+
 
 export const makeApiCall = async(endpoint, data, setLoading, setError, setResponse) => {
     setLoading(true);
     setError(null);
     setResponse(null);
-
     try {
         const response = await fetch(`${API_BASE_URL}${endpoint}`, {
             method: 'POST',
