@@ -109,9 +109,4 @@ Built with ❤️ by Chandan and contributors.
 🚀 Future Additions
 Let me know if you'd like to include:
 
-Screenshots or demo link
-MIT License
-Deployment instructions (e.g., Firebase, Vercel, Render)
-
-
 ⭐ If you found this project helpful, please give it a star!
