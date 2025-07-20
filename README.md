@@ -8,7 +8,6 @@ Welcome to our AI-powered full stack web application built using the **MERN** st
 
 - 🔐 **User Authentication** (Login/Register)
 - 📁 **File & Folder Management** (Create directories, upload/view files)
-- ☁️ **Firebase Storage Integration**
 - 🤖 **AI Assistant Support** using Mistral AI API
 - 💰 **Payments Integration** via Razorpay
 - 🔄 **Password Recovery**
@@ -21,8 +20,7 @@ Welcome to our AI-powered full stack web application built using the **MERN** st
 - **Frontend**: React + Vite
 - **Backend**: Node.js + Express.js
 - **Database**: MongoDB
-- **Authentication**: Firebase Auth
-- **Cloud Storage**: Firebase Storage
+- **Authentication**: Clerk
 - **Payments**: Razorpay
 - **AI Integration**: Mistral AI
 
@@ -75,23 +73,26 @@ Welcome to our AI-powered full stack web application built using the **MERN** st
    git clone https://github.com/chandankumarm55/Evolve-ai.git
    cd your-project
    ```
-   Frontend Setup
-   bashcd client
+2. **Frontend Setup**
+   ```bashcd client
    npm install
    touch .env
+   ```
 
 # Add the required VITE\_ environment variables
-
+```
 npm run dev
-
-Backend Setup
-bashcd server
+```
+**Backend Setup**
+```bashcd server
 npm install
 touch .env
+```
 
 # Add the required backend environment variables
-
+```
 npm run dev
+```
 
 Make sure both client and server are running and connected properly.
 
@@ -101,11 +102,12 @@ If you'd like to help improve this project, feel free to fork it, raise issues, 
 To Contribute:
 
 Fork the repository
+```
 Create a new branch: git checkout -b feature/your-feature-name
 Commit your changes: git commit -m "Added a cool feature"
 Push to your fork: git push origin feature/your-feature-name
 Create a Pull Request
-
+```
 📬 Contact
 For queries or collaboration, please reach out to us via GitHub or email.
 Built with ❤️ by Chandan and contributors.
