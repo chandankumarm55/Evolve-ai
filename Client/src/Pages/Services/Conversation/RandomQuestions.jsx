@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "../../../components/ui/card";
 import { Button } from "../../../components/ui/button";
 import { MessageCircle } from "lucide-react";
+import Loading from "../../../components/FunctionalComponents/Loading";
 
 const questionsList = [
     "How can I help you today?",
@@ -69,7 +70,7 @@ const RandomQuestions = ({ onQuestionSelect }) => {
                             variant="outline"
                             className="hover:bg-blue-500 hover:text-white text-sm sm:text-base"
                         >
-                            { isLoading ? "Loading..." : "Get New Questions" }
+                            { isLoading ? <Loading /> : "Get New Questions" }
                         </Button>
                     </div>
                 </CardContent>

@@ -3,6 +3,7 @@ import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '@clerk/clerk-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import Header from '../FunctionalComponents/Header';
+import Loading from '../FunctionalComponents/Loading';
 
 // This component will serve as a layout for protected routes without the sidebar
 const ProtectedFullWidthLayout = () => {
@@ -12,7 +13,7 @@ const ProtectedFullWidthLayout = () => {
 
     // Show loading or redirect if not authenticated
     if (!isLoaded) {
-        return <div>Loading...</div>;
+        return <Loading />;
     }
 
     if (!isSignedIn) {

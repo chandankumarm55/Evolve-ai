@@ -28,7 +28,7 @@ const Conversation = () => {
     useEffect(() => {
         if (initialPrompt && !hasSubmittedInitialPrompt.current) {
             hasSubmittedInitialPrompt.current = true; // prevent future calls
-            handleSubmit(initialPrompt);
+            handleSubmit({ text: initialPrompt, images: [] });
         }
     }, [initialPrompt]);
 
@@ -59,12 +59,60 @@ const Conversation = () => {
         }
     };
 
-    const handleSubmit = async (message) => {
+    // Convert images to base64 for API
+    const processImages = async (images) => {
+        if (!images || images.length === 0) return [];
+
+        const processedImages = await Promise.all(
+            images.map(async (image) => {
+                // If it's already base64, return as is
+                if (typeof image.preview === 'string' && image.preview.startsWith('data:')) {
+                    return {
+                        type: "image_url",
+                        image_url: {
+                            url: image.preview
+                        }
+                    };
+                }
+
+                // If it's a file, convert to base64
+                return new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        resolve({
+                            type: "image_url",
+                            image_url: {
+                                url: e.target.result
+                            }
+                        });
+                    };
+                    reader.readAsDataURL(image.file);
+                });
+            })
+        );
+
+        return processedImages;
+    };
+
+    const handleSubmit = async (messageData) => {
+        // messageData can be either a string (for backward compatibility) or an object with text and images
+        let text, images;
+
+        if (typeof messageData === 'string') {
+            text = messageData;
+            images = [];
+        } else {
+            text = messageData.text || '';
+            images = messageData.images || [];
+        }
+
         setInput('');
 
+        // Create user message with both text and images for display
         const userMessage = {
             role: 'user',
-            content: message,
+            content: text,
+            images: images, // Store images for display in MessageList
             timestamp: new Date().toLocaleTimeString(),
         };
         setMessages((prev) => [...prev, userMessage]);
@@ -72,12 +120,17 @@ const Conversation = () => {
 
         try {
             await trackUsage();
-            const response = await generateResponse(messages, message);
+
+            // Process images for API
+            const processedImages = await processImages(images);
+
+            const response = await generateResponse(messages, text, processedImages);
             const aiMessage = {
                 role: 'assistant',
                 content: response,
                 timestamp: new Date().toLocaleTimeString(),
-                originalPrompt: message,
+                originalPrompt: text,
+                originalImages: processedImages, // Store for regeneration
             };
             setMessages((prev) => [...prev, aiMessage]);
         } catch (error) {
@@ -95,16 +148,17 @@ const Conversation = () => {
         }
     };
 
-    const handleRegenerateResponse = async (originalPrompt) => {
+    const handleRegenerateResponse = async (originalPrompt, originalImages = []) => {
         setIsTyping(true);
         try {
             await trackUsage();
-            const response = await generateResponse(messages, originalPrompt);
+            const response = await generateResponse(messages, originalPrompt, originalImages);
             const aiMessage = {
                 role: 'assistant',
                 content: response,
                 timestamp: new Date().toLocaleTimeString(),
                 originalPrompt,
+                originalImages,
             };
             setMessages((prev) => [...prev, aiMessage]);
         } catch (error) {
@@ -124,7 +178,7 @@ const Conversation = () => {
 
     const handleQuestionSelect = (question) => {
         setInput(question);
-        handleSubmit(question);
+        handleSubmit({ text: question, images: [] });
     };
 
     return (
