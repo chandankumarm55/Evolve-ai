@@ -17,6 +17,8 @@ const PythonCodeWriter = () => {
     const editorRef = useRef(null);
     const monacoRef = useRef(null);
 
+    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+
     // Initialize Monaco Editor
     useEffect(() => {
         if (editorRef.current && !monacoRef.current) {
@@ -355,7 +357,7 @@ const PythonCodeWriter = () => {
 
     const fetchCodeFromBackend = async (conversationHistory) => {
         try {
-            const response = await fetch('http://localhost:3000/api/codewriter/pythoncodegenerate', {
+            const response = await fetch(`${BACKEND_URL}/api/codewriter/pythoncodegenerate`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
