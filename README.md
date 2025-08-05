@@ -80,16 +80,20 @@ Welcome to our AI-powered full stack web application built using the **MERN** st
    ```
 
 # Add the required VITE\_ environment variables
+
 ```
 npm run dev
 ```
+
 **Backend Setup**
+
 ```bashcd server
 npm install
 touch .env
 ```
 
 # Add the required backend environment variables
+
 ```
 npm run dev
 ```
@@ -102,12 +106,14 @@ If you'd like to help improve this project, feel free to fork it, raise issues, 
 To Contribute:
 
 Fork the repository
+
 ```
 Create a new branch: git checkout -b feature/your-feature-name
 Commit your changes: git commit -m "Added a cool feature"
 Push to your fork: git push origin feature/your-feature-name
 Create a Pull Request
 ```
+
 📬 Contact
 For queries or collaboration, please reach out to us via GitHub or email.
 Built with ❤️ by Chandan and contributors.
