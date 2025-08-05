@@ -66,7 +66,7 @@ app.use('/api/codewriter', codeGenerationRoutes);
 
 // Root route
 app.get('/', (req, res) => {
-    res.json({ message: 'API is running...', status: 'healthy' });
+    res.json({ message: 'API is running...', status: 'healthy', 'frontend': process.env.FRONTEND_URL });
 });
 
 // 404 Handler
