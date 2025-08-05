@@ -8,7 +8,7 @@ dotenv.config();
 // Store sessions temporarily (in production, use Redis or database)
 const sessions = new Map();
 
-const generateAiresponseHtmlCss = async(conversation) => {
+const generateAiresponseHtmlCss = async(conversation, onChunk = null) => {
     try {
         const API_URL = process.env.AI_API_URL || 'https://api.mistral.ai/v1/chat/completions';
         const API_KEY = process.env.AI_API_KEY;
@@ -50,22 +50,79 @@ const generateAiresponseHtmlCss = async(conversation) => {
 
         const fullConversation = [systemMessage, ...conversation];
 
-        const response = await axios.post(
-            API_URL, {
-                model: 'mistral-large-latest',
-                messages: fullConversation,
-                temperature: 0.7,
-                max_tokens: 4000
-            }, {
-                headers: {
-                    'Authorization': `Bearer ${API_KEY}`,
-                    'Content-Type': 'application/json'
+        // For streaming
+        if (onChunk) {
+            const response = await axios.post(
+                API_URL, {
+                    model: 'mistral-large-latest',
+                    messages: fullConversation,
+                    temperature: 0.7,
+                    max_tokens: 4000,
+                    stream: true
+                }, {
+                    headers: {
+                        'Authorization': `Bearer ${API_KEY}`,
+                        'Content-Type': 'application/json'
+                    },
+                    responseType: 'stream',
+                    timeout: 300000 // 5 minutes timeout
                 }
-            }
-        );
+            );
 
-        const generatedCode = response.data.choices[0].message.content;
-        return generatedCode;
+            let fullContent = '';
+
+            return new Promise((resolve, reject) => {
+                response.data.on('data', (chunk) => {
+                    const lines = chunk.toString().split('\n').filter(line => line.trim() !== '');
+
+                    for (const line of lines) {
+                        if (line.includes('[DONE]')) {
+                            resolve(fullContent);
+                            return;
+                        }
+
+                        if (line.startsWith('data: ')) {
+                            try {
+                                const data = JSON.parse(line.slice(6));
+                                if (data.choices && data.choices[0] && data.choices[0].delta && data.choices[0].delta.content) {
+                                    const content = data.choices[0].delta.content;
+                                    fullContent += content;
+                                    onChunk(content, fullContent);
+                                }
+                            } catch (e) {
+                                // Ignore parsing errors for non-JSON lines
+                            }
+                        }
+                    }
+                });
+
+                response.data.on('end', () => {
+                    resolve(fullContent);
+                });
+
+                response.data.on('error', (error) => {
+                    reject(error);
+                });
+            });
+        } else {
+            // Non-streaming fallback
+            const response = await axios.post(
+                API_URL, {
+                    model: 'mistral-large-latest',
+                    messages: fullConversation,
+                    temperature: 0.7,
+                    max_tokens: 4000
+                }, {
+                    headers: {
+                        'Authorization': `Bearer ${API_KEY}`,
+                        'Content-Type': 'application/json'
+                    },
+                    timeout: 300000 // 5 minutes timeout
+                }
+            );
+
+            return response.data.choices[0].message.content;
+        }
     } catch (error) {
         console.error('Error generating AI response:', error);
         throw new Error(`Failed to generate code: ${error.message}`);
@@ -73,6 +130,170 @@ const generateAiresponseHtmlCss = async(conversation) => {
 };
 
 export const generateCode = async(req, res) => {
+    try {
+        const { prompt, conversation = [] } = req.body;
+
+        if (!prompt) {
+            return res.status(400).json({ message: 'Prompt is required' });
+        }
+
+        const updatedConversation = [
+            ...conversation,
+            { role: 'user', content: prompt }
+        ];
+
+        // Set headers for Server-Sent Events
+        res.writeHead(200, {
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Headers': 'Cache-Control'
+        });
+
+        let fullContent = '';
+        const sessionId = Date.now().toString(36) + Math.random().toString(36).substr(2);
+
+        try {
+            const generatedCode = await generateAiresponseHtmlCss(
+                updatedConversation,
+                (chunk, accumulated) => {
+                    fullContent = accumulated;
+                    // Send chunk to client
+                    res.write(`data: ${JSON.stringify({ 
+                        type: 'chunk', 
+                        content: chunk, 
+                        accumulated: accumulated,
+                        sessionId: sessionId 
+                    })}\n\n`);
+                }
+            );
+
+            updatedConversation.push({ role: 'assistant', content: fullContent });
+
+            // Store the conversation
+            sessions.set(sessionId, {
+                conversation: updatedConversation,
+                createdAt: new Date()
+            });
+
+            // Clean up old sessions (keep only last 100)
+            if (sessions.size > 100) {
+                const oldestKey = sessions.keys().next().value;
+                sessions.delete(oldestKey);
+            }
+
+            // Send completion event
+            res.write(`data: ${JSON.stringify({ 
+                type: 'complete', 
+                content: fullContent,
+                conversation: updatedConversation,
+                sessionId: sessionId,
+                message: 'Code generated successfully'
+            })}\n\n`);
+
+        } catch (error) {
+            console.error('Error in streaming:', error);
+            res.write(`data: ${JSON.stringify({ 
+                type: 'error', 
+                message: error.message 
+            })}\n\n`);
+        }
+
+        res.end();
+
+    } catch (error) {
+        console.error('Error in generateCode:', error);
+        if (!res.headersSent) {
+            res.status(500).json({ message: error.message });
+        }
+    }
+};
+
+export const continueConversation = async(req, res) => {
+    try {
+        const { prompt, conversation = [], sessionId } = req.body;
+
+        if (!prompt) {
+            return res.status(400).json({ message: 'Prompt is required' });
+        }
+
+        // Get existing conversation from session or use provided conversation
+        let existingConversation = conversation;
+        if (sessionId && sessions.has(sessionId)) {
+            existingConversation = sessions.get(sessionId).conversation;
+        }
+
+        const updatedConversation = [
+            ...existingConversation,
+            { role: 'user', content: prompt }
+        ];
+
+        // Set headers for Server-Sent Events
+        res.writeHead(200, {
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Headers': 'Cache-Control'
+        });
+
+        let fullContent = '';
+
+        try {
+            const generatedCode = await generateAiresponseHtmlCss(
+                updatedConversation,
+                (chunk, accumulated) => {
+                    fullContent = accumulated;
+                    // Send chunk to client
+                    res.write(`data: ${JSON.stringify({ 
+                        type: 'chunk', 
+                        content: chunk, 
+                        accumulated: accumulated,
+                        sessionId: sessionId 
+                    })}\n\n`);
+                }
+            );
+
+            updatedConversation.push({ role: 'assistant', content: fullContent });
+
+            // Update session with new conversation
+            if (sessionId) {
+                sessions.set(sessionId, {
+                    conversation: updatedConversation,
+                    createdAt: new Date()
+                });
+            }
+
+            // Send completion event
+            res.write(`data: ${JSON.stringify({ 
+                type: 'complete', 
+                content: fullContent,
+                conversation: updatedConversation,
+                sessionId: sessionId,
+                message: 'Feature added successfully'
+            })}\n\n`);
+
+        } catch (error) {
+            console.error('Error in streaming:', error);
+            res.write(`data: ${JSON.stringify({ 
+                type: 'error', 
+                message: error.message 
+            })}\n\n`);
+        }
+
+        res.end();
+
+    } catch (error) {
+        console.error('Error in continueConversation:', error);
+        if (!res.headersSent) {
+            res.status(500).json({ message: error.message });
+        }
+    }
+};
+
+// Non-streaming fallback endpoints
+export const generateCodeSync = async(req, res) => {
     try {
         const { prompt, conversation = [] } = req.body;
 
@@ -109,12 +330,12 @@ export const generateCode = async(req, res) => {
             conversation: updatedConversation
         });
     } catch (error) {
-        console.error('Error in generateCode:', error);
+        console.error('Error in generateCodeSync:', error);
         res.status(500).json({ message: error.message });
     }
 };
 
-export const continueConversation = async(req, res) => {
+export const continueConversationSync = async(req, res) => {
     try {
         const { prompt, conversation = [], sessionId } = req.body;
 
@@ -152,7 +373,7 @@ export const continueConversation = async(req, res) => {
             conversation: updatedConversation
         });
     } catch (error) {
-        console.error('Error in continueConversation:', error);
+        console.error('Error in continueConversationSync:', error);
         res.status(500).json({ message: error.message });
     }
 };

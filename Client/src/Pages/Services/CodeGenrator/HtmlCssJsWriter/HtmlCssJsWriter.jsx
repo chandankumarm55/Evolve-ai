@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { FileText, Code, Layers, Eye, Moon, Sun, ArrowLeft, Download, Plus, AlertCircle } from 'lucide-react';
 import { useTheme } from '../../../../contexts/ThemeContext';
@@ -15,9 +15,12 @@ const CodeExplorer = () => {
     const [error, setError] = useState('');
     const [viewMode, setViewMode] = useState('code');
     const [downloadStatus, setDownloadStatus] = useState('');
+    const [streamingContent, setStreamingContent] = useState('');
+    const [showStreamingPreview, setShowStreamingPreview] = useState(false);
     const { theme, setTheme } = useTheme();
     const isDark = theme === 'dark';
     const navigate = useNavigate();
+    const eventSourceRef = useRef(null);
 
     // Get backend URL from environment variables or use default
     const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
@@ -25,6 +28,15 @@ const CodeExplorer = () => {
     useEffect(() => {
         document.documentElement.classList.toggle('dark', isDark);
     }, [isDark]);
+
+    useEffect(() => {
+        // Cleanup event source on unmount
+        return () => {
+            if (eventSourceRef.current) {
+                eventSourceRef.current.close();
+            }
+        };
+    }, []);
 
     const toggleTheme = () => {
         setTheme(isDark ? 'light' : 'dark');
@@ -110,27 +122,151 @@ const CodeExplorer = () => {
         }
     };
 
+    const handleStreamingResponse = (endpoint, data, isFeature = false) => {
+        setIsLoading(true);
+        setError('');
+        setStreamingContent('');
+        setShowStreamingPreview(true);
+
+        // Close any existing event source
+        if (eventSourceRef.current) {
+            eventSourceRef.current.close();
+        }
+
+        // Create new event source using fetch for POST requests
+        const controller = new AbortController();
+
+        fetch(`${BACKEND_URL}${endpoint}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'text/event-stream',
+            },
+            body: JSON.stringify(data),
+            signal: controller.signal
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+
+                const readStream = () => {
+                    reader.read().then(({ done, value }) => {
+                        if (done) {
+                            setIsLoading(false);
+                            setShowStreamingPreview(false);
+                            return;
+                        }
+
+                        const chunk = decoder.decode(value);
+                        const lines = chunk.split('\n');
+
+                        lines.forEach(line => {
+                            if (line.startsWith('data: ')) {
+                                try {
+                                    const eventData = JSON.parse(line.slice(6));
+
+                                    if (eventData.type === 'chunk') {
+                                        setStreamingContent(eventData.accumulated);
+                                        setSessionId(eventData.sessionId);
+                                    } else if (eventData.type === 'complete') {
+                                        setConversation(eventData.conversation || []);
+                                        setSessionId(eventData.sessionId);
+
+                                        const parsedFiles = parseAiResponse(eventData.content);
+                                        if (Object.keys(parsedFiles).length === 0) {
+                                            setError('No valid code was generated. Please try a different prompt.');
+                                            return;
+                                        }
+
+                                        setFiles(parsedFiles);
+                                        const firstFile = Object.keys(parsedFiles)[0];
+                                        if (!parsedFiles[activeFile]) {
+                                            setActiveFile(firstFile);
+                                        }
+
+                                        if (isFeature) {
+                                            setFeaturePrompt('');
+                                        } else {
+                                            setPrompt('');
+                                        }
+
+                                        setStreamingContent('');
+                                        setShowStreamingPreview(false);
+                                        setIsLoading(false);
+                                    } else if (eventData.type === 'error') {
+                                        setError(eventData.message);
+                                        setIsLoading(false);
+                                        setShowStreamingPreview(false);
+                                    }
+                                } catch (e) {
+                                    console.error('Error parsing event data:', e);
+                                }
+                            }
+                        });
+
+                        readStream();
+                    });
+                };
+
+                readStream();
+            })
+            .catch(err => {
+                console.error('Streaming error:', err);
+                setError(err.message || 'Failed to connect to streaming endpoint');
+                setIsLoading(false);
+                setShowStreamingPreview(false);
+            });
+
+        // Store the controller for cleanup
+        eventSourceRef.current = { close: () => controller.abort() };
+    };
+
     const handleGenerateCode = async (e) => {
+        e.preventDefault();
+        if (!prompt.trim()) return;
+
+        handleStreamingResponse('/api/codewriter/htmlcssjscodegenerate', {
+            prompt,
+            conversation
+        });
+    };
+
+    const handleAddFeature = async (e) => {
+        e.preventDefault();
+        if (!featurePrompt.trim() || !sessionId) {
+            setError('Please enter a feature description and ensure you have an active session');
+            return;
+        }
+
+        handleStreamingResponse('/api/codewriter/continue', {
+            prompt: featurePrompt,
+            conversation,
+            sessionId
+        }, true);
+    };
+
+    // Fallback to synchronous method if streaming fails
+    const handleGenerateCodeSync = async (e) => {
         e.preventDefault();
         if (!prompt.trim()) return;
 
         setIsLoading(true);
         setError('');
 
-        console.log('Making API call to:', `${BACKEND_URL}/api/codewriter/htmlcssjscodegenerate`);
-
         try {
-            const response = await axios.post(`${BACKEND_URL}/api/codewriter/htmlcssjscodegenerate`, {
+            const response = await axios.post(`${BACKEND_URL}/api/codewriter/htmlcssjscodegenerate-sync`, {
                 prompt,
                 conversation
             }, {
-                timeout: 30000, // 30 second timeout
+                timeout: 300000, // 5 minutes timeout
                 headers: {
                     'Content-Type': 'application/json',
                 }
             });
-
-            console.log('API Response:', response.data);
 
             if (response.data && response.data.content) {
                 setConversation(response.data.conversation || []);
@@ -143,93 +279,22 @@ const CodeExplorer = () => {
                 }
 
                 setFiles(parsedFiles);
-                // Set active file to the first available file
                 const firstFile = Object.keys(parsedFiles)[0];
                 setActiveFile(firstFile);
                 setPrompt('');
             } else {
                 setError('Invalid response from server');
-                console.error('Invalid response structure:', response.data);
             }
         } catch (err) {
             console.error('Error generating code:', err);
-
-            // More detailed error handling
             if (err.code === 'ECONNREFUSED' || err.code === 'ERR_NETWORK') {
                 setError(`Cannot connect to backend server at ${BACKEND_URL}. Please check if the server is running.`);
             } else if (err.response) {
-                // Server responded with error status
                 setError(err.response?.data?.message || `Server error: ${err.response.status}`);
             } else if (err.request) {
-                // Request was made but no response received
                 setError('No response from server. Please check your network connection.');
             } else {
-                // Something else happened
                 setError(err.message || 'Failed to generate code');
-            }
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const handleAddFeature = async (e) => {
-        e.preventDefault();
-        if (!featurePrompt.trim() || !sessionId) {
-            setError('Please enter a feature description and ensure you have an active session');
-            return;
-        }
-
-        setIsLoading(true);
-        setError('');
-
-        console.log('Making API call to:', `${BACKEND_URL}/api/codewriter/continue`);
-
-        try {
-            const response = await axios.post(`${BACKEND_URL}/api/codewriter/continue`, {
-                prompt: featurePrompt,
-                conversation,
-                sessionId
-            }, {
-                timeout: 30000, // 30 second timeout
-                headers: {
-                    'Content-Type': 'application/json',
-                }
-            });
-
-            console.log('API Response:', response.data);
-
-            if (response.data && response.data.content) {
-                setConversation(response.data.conversation || []);
-                const parsedFiles = parseAiResponse(response.data.content);
-
-                if (Object.keys(parsedFiles).length === 0) {
-                    setError('No valid code was generated. Please try a different feature request.');
-                    return;
-                }
-
-                setFiles(parsedFiles);
-                // Keep the same active file if it still exists, otherwise set to first file
-                const firstFile = Object.keys(parsedFiles)[0];
-                if (!parsedFiles[activeFile]) {
-                    setActiveFile(firstFile);
-                }
-                setFeaturePrompt('');
-            } else {
-                setError('Invalid response from server');
-                console.error('Invalid response structure:', response.data);
-            }
-        } catch (err) {
-            console.error('Error adding feature:', err);
-
-            // More detailed error handling
-            if (err.code === 'ECONNREFUSED' || err.code === 'ERR_NETWORK') {
-                setError(`Cannot connect to backend server at ${BACKEND_URL}. Please check if the server is running.`);
-            } else if (err.response) {
-                setError(err.response?.data?.message || `Server error: ${err.response.status}`);
-            } else if (err.request) {
-                setError('No response from server. Please check your network connection.');
-            } else {
-                setError(err.message || 'Failed to add feature');
             }
         } finally {
             setIsLoading(false);
@@ -249,7 +314,7 @@ const CodeExplorer = () => {
                 files
             }, {
                 responseType: 'blob',
-                timeout: 30000, // 30 second timeout
+                timeout: 30000,
                 headers: {
                     'Content-Type': 'application/json',
                 }
@@ -279,6 +344,11 @@ const CodeExplorer = () => {
     };
 
     const handleNewPrompt = () => {
+        // Close any active streaming
+        if (eventSourceRef.current) {
+            eventSourceRef.current.close();
+        }
+
         setFiles({});
         setActiveFile('');
         setPrompt('');
@@ -288,6 +358,9 @@ const CodeExplorer = () => {
         setError('');
         setDownloadStatus('');
         setViewMode('code');
+        setStreamingContent('');
+        setShowStreamingPreview(false);
+        setIsLoading(false);
     };
 
     const getFileIcon = (filename) => {
@@ -322,6 +395,40 @@ const CodeExplorer = () => {
                 html = html.replace('</body>', `<script>\n${files['app.js']}\n</script>\n</body>`);
             } else {
                 html = `${html}\n<script>\n${files['app.js']}\n</script>`;
+            }
+        }
+
+        return html;
+    };
+
+    const getStreamingPreviewHtml = () => {
+        if (!streamingContent) return '';
+
+        const parsedFiles = parseAiResponse(streamingContent);
+        let html = parsedFiles['index.html'] || '';
+
+        if (!html) return '';
+
+        // Ensure proper HTML structure
+        if (!html.includes('<!DOCTYPE html>')) {
+            html = `<!DOCTYPE html>\n<html>\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width, initial-scale=1.0">\n<title>Generated App</title>\n</head>\n<body>\n${html}\n</body>\n</html>`;
+        }
+
+        // Inject CSS
+        if (parsedFiles['styles.css']) {
+            if (html.includes('</head>')) {
+                html = html.replace('</head>', `<style>\n${parsedFiles['styles.css']}\n</style>\n</head>`);
+            } else {
+                html = html.replace('<body>', `<style>\n${parsedFiles['styles.css']}\n</style>\n<body>`);
+            }
+        }
+
+        // Inject JavaScript
+        if (parsedFiles['app.js']) {
+            if (html.includes('</body>')) {
+                html = html.replace('</body>', `<script>\n${parsedFiles['app.js']}\n</script>\n</body>`);
+            } else {
+                html = `${html}\n<script>\n${parsedFiles['app.js']}\n</script>`;
             }
         }
 
@@ -369,30 +476,51 @@ const CodeExplorer = () => {
                         disabled={ isLoading }
                     />
 
-                    <button
-                        type="submit"
-                        disabled={ isLoading || !prompt.trim() }
-                        className={ `
-                            px-6 py-3 rounded-lg font-medium transition-all duration-200
-                            flex items-center justify-center gap-2 text-white min-w-[120px]
-                            ${isLoading || !prompt.trim()
-                                ? 'bg-gray-500 cursor-not-allowed'
-                                : 'bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 shadow-lg hover:shadow-xl'
-                            }
-                        `}
-                    >
-                        { isLoading ? (
-                            <>
-                                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                                Generating...
-                            </>
-                        ) : (
-                            <>
-                                Generate
-                                <span>→</span>
-                            </>
-                        ) }
-                    </button>
+                    <div className="flex gap-2">
+                        <button
+                            type="submit"
+                            disabled={ isLoading || !prompt.trim() }
+                            className={ `
+                                px-6 py-3 rounded-lg font-medium transition-all duration-200
+                                flex items-center justify-center gap-2 text-white min-w-[120px]
+                                ${isLoading || !prompt.trim()
+                                    ? 'bg-gray-500 cursor-not-allowed'
+                                    : 'bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 shadow-lg hover:shadow-xl'
+                                }
+                            `}
+                        >
+                            { isLoading ? (
+                                <>
+                                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                                    Generating...
+                                </>
+                            ) : (
+                                <>
+                                    Generate (Stream)
+                                    <span>→</span>
+                                </>
+                            ) }
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={ handleGenerateCodeSync }
+                            disabled={ isLoading || !prompt.trim() }
+                            className={ `
+                                px-4 py-3 rounded-lg font-medium transition-all duration-200
+                                flex items-center justify-center gap-2 text-sm
+                                ${isLoading || !prompt.trim()
+                                    ? 'bg-gray-500 cursor-not-allowed text-white'
+                                    : isDark
+                                        ? 'bg-gray-600 text-white hover:bg-gray-500'
+                                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                }
+                            `}
+                            title="Fallback non-streaming method"
+                        >
+                            Sync
+                        </button>
+                    </div>
                 </form>
 
                 { Object.keys(files).length > 0 && (
@@ -450,12 +578,10 @@ const CodeExplorer = () => {
                         { downloadStatus }
                     </div>
                 ) }
-
-
             </div>
 
             <div className="flex flex-1 overflow-hidden flex-col md:flex-row">
-                { Object.keys(files).length > 0 && (
+                { (Object.keys(files).length > 0 || showStreamingPreview) && (
                     <div className={ `w-full md:w-64 ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'} p-4 border-r` }>
                         <div className="flex justify-between items-center mb-4">
                             <h2 className="text-lg font-semibold">Files</h2>
@@ -488,10 +614,10 @@ const CodeExplorer = () => {
                                 </button>
                                 <button
                                     onClick={ handleDownload }
-                                    disabled={ downloadStatus === 'Preparing download...' }
+                                    disabled={ downloadStatus === 'Preparing download...' || Object.keys(files).length === 0 }
                                     className={ `
                                         p-2 rounded-lg transition-all duration-200
-                                        ${downloadStatus === 'Preparing download...'
+                                        ${downloadStatus === 'Preparing download...' || Object.keys(files).length === 0
                                             ? 'bg-gray-500 cursor-not-allowed text-gray-300'
                                             : (isDark ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-300')
                                         }
@@ -513,6 +639,12 @@ const CodeExplorer = () => {
                             </div>
                         </div>
                         <div className="space-y-1">
+                            { showStreamingPreview && (
+                                <div className={ `flex items-center p-3 rounded-lg ${isDark ? 'bg-yellow-900/20 border border-yellow-700 text-yellow-300' : 'bg-yellow-100 border border-yellow-300 text-yellow-800'}` }>
+                                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent mr-3"></div>
+                                    <span className="text-sm">Streaming...</span>
+                                </div>
+                            ) }
                             { Object.keys(files).map(filename => (
                                 files[filename] && (
                                     <div
@@ -536,7 +668,7 @@ const CodeExplorer = () => {
                 ) }
 
                 <div className="flex-1 overflow-auto">
-                    { Object.keys(files).length === 0 && !isLoading && (
+                    { Object.keys(files).length === 0 && !isLoading && !showStreamingPreview && (
                         <div className="flex h-full items-center justify-center p-4">
                             <div className="text-center p-8">
                                 <div className={ `w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${isDark ? 'bg-gray-800' : 'bg-gray-100'}` }>
@@ -561,7 +693,7 @@ const CodeExplorer = () => {
                         </div>
                     ) }
 
-                    { isLoading && (
+                    { isLoading && !showStreamingPreview && (
                         <div className="flex h-full items-center justify-center p-4">
                             <div className="text-center">
                                 <div className={ `animate-spin rounded-full h-12 w-12 border-4 ${isDark ? 'border-gray-600 border-t-white' : 'border-gray-300 border-t-blue-500'} mx-auto mb-4` }></div>
@@ -575,7 +707,31 @@ const CodeExplorer = () => {
                         </div>
                     ) }
 
-                    { !isLoading && Object.keys(files).length > 0 && viewMode === 'code' && activeFile && (
+                    { showStreamingPreview && streamingContent && (
+                        <div className="p-4 h-full">
+                            <div className={ `${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} border rounded-lg shadow-sm h-full flex flex-col` }>
+                                <div className={ `flex items-center justify-between border-b ${isDark ? 'border-gray-700' : 'border-gray-200'} p-4` }>
+                                    <div className="flex items-center gap-2">
+                                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent"></div>
+                                        <h3 className="font-medium">Live Streaming Preview</h3>
+                                    </div>
+                                    <div className="text-sm text-gray-500">
+                                        AI is generating code...
+                                    </div>
+                                </div>
+                                <div className="flex-1 min-h-[500px]">
+                                    <iframe
+                                        srcDoc={ getStreamingPreviewHtml() }
+                                        title="Streaming Preview"
+                                        className="w-full h-full border-0 rounded-b-lg"
+                                        sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    ) }
+
+                    { !isLoading && !showStreamingPreview && Object.keys(files).length > 0 && viewMode === 'code' && activeFile && (
                         <div className="p-4">
                             <div className={ `${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} border rounded-lg shadow-sm` }>
                                 <div className={ `flex items-center justify-between border-b ${isDark ? 'border-gray-700' : 'border-gray-200'} p-4` }>
@@ -594,7 +750,7 @@ const CodeExplorer = () => {
                         </div>
                     ) }
 
-                    { !isLoading && Object.keys(files).length > 0 && viewMode === 'preview' && (
+                    { !isLoading && !showStreamingPreview && Object.keys(files).length > 0 && viewMode === 'preview' && (
                         <div className="p-4 h-full">
                             <div className={ `${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} border rounded-lg shadow-sm h-full flex flex-col` }>
                                 <div className={ `flex items-center justify-between border-b ${isDark ? 'border-gray-700' : 'border-gray-200'} p-4` }>
