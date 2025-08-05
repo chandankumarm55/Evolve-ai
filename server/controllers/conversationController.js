@@ -72,7 +72,7 @@ export const ConversationAIResponse = async(req, res) => {
             latestMessage.content.find(c => c.type === 'text').text || '';
 
         // Get all messages except the last one for context
-        const contextMessages = messages.slice(0, -1);
+        const contextMessages = messages.slice(0, -1)   ;
 
         const response = await generateResponse(contextMessages, userInput, hasImages);
 
