@@ -14,8 +14,11 @@ const PythonCodeWriter = () => {
     const [currentCode, setCurrentCode] = useState('# Your Python code will appear here\n# Start by describing what you want to build!');
     const [codeInfo, setCodeInfo] = useState('💡 Enter a prompt to generate Python code.\n\n✨ Try asking for:\n• Data analysis scripts\n• Web scraping tools\n• API integrations\n• Machine learning models\n• Automation scripts');
     const [copied, setCopied] = useState(false);
+    const [streamingResponse, setStreamingResponse] = useState('');
+    const [isStreaming, setIsStreaming] = useState(false);
     const editorRef = useRef(null);
     const monacoRef = useRef(null);
+    const eventSourceRef = useRef(null);
 
     const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
@@ -69,9 +72,17 @@ const PythonCodeWriter = () => {
         }
     }, [isDark]);
 
+    // Cleanup EventSource on unmount
+    useEffect(() => {
+        return () => {
+            if (eventSourceRef.current) {
+                eventSourceRef.current.close();
+            }
+        };
+    }, []);
+
     // Filter function to remove code blocks
     const filterCodeBlocks = (text) => {
-        // Remove ```python, ```py, or ``` at the beginning and end
         return text
             .replace(/^```(?:python|py)?\n?/gm, '')
             .replace(/\n?```$/gm, '')
@@ -83,7 +94,6 @@ const PythonCodeWriter = () => {
     const formatMarkdownText = (text) => {
         if (!text) return null;
 
-        // Split text into lines
         const lines = text.split('\n');
         const formattedElements = [];
         let currentListItems = [];
@@ -91,9 +101,7 @@ const PythonCodeWriter = () => {
         lines.forEach((line, index) => {
             const trimmedLine = line.trim();
 
-            // Handle headers
             if (trimmedLine.startsWith('### ')) {
-                // Flush any pending list items
                 if (currentListItems.length > 0) {
                     formattedElements.push(
                         <ul key={ `list-${index}` } className="list-disc pl-6 mb-4 space-y-1">
@@ -108,7 +116,6 @@ const PythonCodeWriter = () => {
                     </h3>
                 );
             } else if (trimmedLine.startsWith('## ')) {
-                // Flush any pending list items
                 if (currentListItems.length > 0) {
                     formattedElements.push(
                         <ul key={ `list-${index}` } className="list-disc pl-6 mb-4 space-y-1">
@@ -123,7 +130,6 @@ const PythonCodeWriter = () => {
                     </h2>
                 );
             } else if (trimmedLine.startsWith('# ')) {
-                // Flush any pending list items
                 if (currentListItems.length > 0) {
                     formattedElements.push(
                         <ul key={ `list-${index}` } className="list-disc pl-6 mb-4 space-y-1">
@@ -137,10 +143,7 @@ const PythonCodeWriter = () => {
                         { trimmedLine.replace('# ', '') }
                     </h1>
                 );
-            }
-            // Handle numbered lists
-            else if (/^\d+\.\s/.test(trimmedLine)) {
-                // Flush any pending unordered list items
+            } else if (/^\d+\.\s/.test(trimmedLine)) {
                 if (currentListItems.length > 0) {
                     formattedElements.push(
                         <ul key={ `list-${index}` } className="list-disc pl-6 mb-4 space-y-1">
@@ -152,39 +155,29 @@ const PythonCodeWriter = () => {
 
                 const listText = trimmedLine.replace(/^\d+\.\s/, '');
                 const formattedListText = formatInlineMarkdown(listText);
-
-                // Check if this is the start of a new numbered list
                 const prevLine = index > 0 ? lines[index - 1].trim() : '';
                 const isFirstItem = !(/^\d+\.\s/.test(prevLine));
 
                 if (isFirstItem) {
-                    // Start new ordered list
                     formattedElements.push(
                         <ol key={ `ol-${index}` } className="list-decimal pl-6 mb-4 space-y-1">
                             <li>{ formattedListText }</li>
                         </ol>
                     );
                 } else {
-                    // Continue previous ordered list - we need to handle this differently
-                    // For now, we'll create individual items
                     formattedElements.push(
                         <ol key={ `ol-${index}` } className="list-decimal pl-6 mb-1 space-y-1" start={ trimmedLine.match(/^(\d+)\./)[1] }>
                             <li>{ formattedListText }</li>
                         </ol>
                     );
                 }
-            }
-            // Handle unordered lists (-, *, +, or •)
-            else if (/^[-*+•]\s/.test(trimmedLine)) {
+            } else if (/^[-*+•]\s/.test(trimmedLine)) {
                 const listText = trimmedLine.replace(/^[-*+•]\s/, '');
                 const formattedListText = formatInlineMarkdown(listText);
                 currentListItems.push(
                     <li key={ `item-${index}` }>{ formattedListText }</li>
                 );
-            }
-            // Handle code blocks
-            else if (trimmedLine.startsWith('```')) {
-                // Flush any pending list items
+            } else if (trimmedLine.startsWith('```')) {
                 if (currentListItems.length > 0) {
                     formattedElements.push(
                         <ul key={ `list-${index}` } className="list-disc pl-6 mb-4 space-y-1">
@@ -193,7 +186,6 @@ const PythonCodeWriter = () => {
                     );
                     currentListItems = [];
                 }
-                // Handle code blocks (simplified - you might want to improve this)
                 const codeContent = trimmedLine.replace(/```\w*/, '');
                 if (codeContent) {
                     formattedElements.push(
@@ -205,10 +197,7 @@ const PythonCodeWriter = () => {
                         </code>
                     );
                 }
-            }
-            // Handle inline code
-            else if (trimmedLine.includes('`') && !trimmedLine.startsWith('```')) {
-                // Flush any pending list items
+            } else if (trimmedLine.includes('`') && !trimmedLine.startsWith('```')) {
                 if (currentListItems.length > 0) {
                     formattedElements.push(
                         <ul key={ `list-${index}` } className="list-disc pl-6 mb-4 space-y-1">
@@ -222,10 +211,7 @@ const PythonCodeWriter = () => {
                         { formatInlineMarkdown(trimmedLine) }
                     </p>
                 );
-            }
-            // Handle empty lines
-            else if (trimmedLine === '') {
-                // Flush any pending list items before adding space
+            } else if (trimmedLine === '') {
                 if (currentListItems.length > 0) {
                     formattedElements.push(
                         <ul key={ `list-${index}` } className="list-disc pl-6 mb-4 space-y-1">
@@ -235,10 +221,7 @@ const PythonCodeWriter = () => {
                     currentListItems = [];
                 }
                 formattedElements.push(<div key={ index } className="mb-2"></div>);
-            }
-            // Handle regular paragraphs
-            else {
-                // Flush any pending list items
+            } else {
                 if (currentListItems.length > 0) {
                     formattedElements.push(
                         <ul key={ `list-${index}` } className="list-disc pl-6 mb-4 space-y-1">
@@ -255,7 +238,6 @@ const PythonCodeWriter = () => {
             }
         });
 
-        // Flush any remaining list items
         if (currentListItems.length > 0) {
             formattedElements.push(
                 <ul key="final-list" className="list-disc pl-6 mb-4 space-y-1">
@@ -267,15 +249,12 @@ const PythonCodeWriter = () => {
         return formattedElements;
     };
 
-    // Function to handle inline markdown formatting
     const formatInlineMarkdown = (text) => {
         if (!text) return text;
 
-        // Split by backticks for inline code
         const parts = text.split('`');
         return parts.map((part, index) => {
             if (index % 2 === 1) {
-                // This is inside backticks - render as code with theme-aware styling
                 return (
                     <code key={ index } className={ `px-2 py-1 rounded text-sm font-mono font-bold ${isDark
                         ? 'bg-gray-700 text-blue-300'
@@ -285,21 +264,17 @@ const PythonCodeWriter = () => {
                     </code>
                 );
             } else {
-                // This is regular text - handle bold formatting
                 return formatBoldText(part);
             }
         });
     };
 
-    // Function to handle bold text
     const formatBoldText = (text) => {
         if (!text) return text;
 
-        // Split by ** for bold text
         const parts = text.split('**');
         return parts.map((part, index) => {
             if (index % 2 === 1) {
-                // This is inside ** - render as bold
                 return <strong key={ index } className="font-bold text-blue-600 dark:text-blue-400">{ part }</strong>;
             } else {
                 return part;
@@ -310,40 +285,83 @@ const PythonCodeWriter = () => {
     const handleSubmit = async () => {
         if (!userInput.trim()) return;
 
-        // Add user message to conversation
+        // Close any existing EventSource
+        if (eventSourceRef.current) {
+            eventSourceRef.current.close();
+        }
+
         const newMessage = { role: 'user', content: userInput };
         const updatedConversations = [...conversations, newMessage];
         setConversations(updatedConversations);
-
-        // Clear input field
         setUserInput('');
-
-        // Set loading state
         setIsLoading(true);
+        setIsStreaming(true);
+        setStreamingResponse('');
 
         try {
-            // Call the backend API instead of the simulate function
-            const response = await fetchCodeFromBackend(updatedConversations);
+            // Create a streaming request using fetch with POST data
+            const response = await fetch(`${BACKEND_URL}/api/codewriter/pythoncodegenerate`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'text/event-stream',
+                },
+                body: JSON.stringify({ messages: updatedConversations }),
+            });
 
-            // Parse the response to separate code and info
-            const { code, info } = parseResponse(response);
+            if (!response.ok) {
+                throw new Error('Failed to start streaming');
+            }
 
-            // Filter the code to remove code blocks
-            const filteredCode = filterCodeBlocks(code);
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
 
-            // Update state with response
-            setCurrentCode(filteredCode);
-            setCodeInfo(info);
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
 
-            // Add AI response to conversation
-            setConversations([...updatedConversations, {
-                role: 'assistant',
-                content: response
-            }]);
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+                buffer = lines.pop() || ''; // Keep incomplete line in buffer
+
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        try {
+                            const data = JSON.parse(line.slice(6));
+
+                            if (data.type === 'chunk') {
+                                setStreamingResponse(prev => prev + data.content);
+
+                                // Update code and info in real-time
+                                const { code, info } = parseResponse(data.fullResponse);
+                                const filteredCode = filterCodeBlocks(code);
+                                setCurrentCode(filteredCode);
+                                setCodeInfo(info);
+                            } else if (data.type === 'complete') {
+                                // Final update
+                                const filteredCode = filterCodeBlocks(data.code);
+                                setCurrentCode(filteredCode);
+                                setCodeInfo(data.info);
+                                setConversations([...updatedConversations, data.message]);
+                                setIsStreaming(false);
+                                setIsLoading(false);
+                            } else if (data.type === 'error') {
+                                console.error('Streaming error:', data.error);
+                                setCodeInfo('❌ Failed to generate code. Please try again.');
+                                setIsStreaming(false);
+                                setIsLoading(false);
+                            }
+                        } catch (parseError) {
+                            console.error('Failed to parse SSE data:', parseError);
+                        }
+                    }
+                }
+            }
         } catch (error) {
-            console.error('Error generating code:', error);
+            console.error('Error with streaming:', error);
             setCodeInfo('❌ Failed to generate code. Please try again.');
-        } finally {
+            setIsStreaming(false);
             setIsLoading(false);
         }
     };
@@ -352,28 +370,6 @@ const PythonCodeWriter = () => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             handleSubmit();
-        }
-    };
-
-    const fetchCodeFromBackend = async (conversationHistory) => {
-        try {
-            const response = await fetch(`${BACKEND_URL}/api/codewriter/pythoncodegenerate`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ messages: conversationHistory }),
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to generate code');
-            }
-
-            const data = await response.json();
-            return data.fullResponse;
-        } catch (error) {
-            console.error('Error calling API:', error);
-            throw error;
         }
     };
 
@@ -392,6 +388,10 @@ const PythonCodeWriter = () => {
     };
 
     const handleBackNavigation = () => {
+        // Close EventSource before navigating
+        if (eventSourceRef.current) {
+            eventSourceRef.current.close();
+        }
         navigate('/dashboard/codegenerator/');
     };
 
@@ -416,6 +416,7 @@ const PythonCodeWriter = () => {
                             </h1>
                             <p className="text-sm">
                                 AI-powered Python development assistant
+                                { isStreaming && <span className="ml-2 text-blue-500">🔄 Generating...</span> }
                             </p>
                         </div>
                     </div>
@@ -429,6 +430,12 @@ const PythonCodeWriter = () => {
                             <h2 className="font-semibold flex items-center space-x-2">
                                 <Code size={ 18 } />
                                 <span>Generated Code</span>
+                                { isStreaming && (
+                                    <div className="flex items-center space-x-1 text-blue-500">
+                                        <RefreshCw size={ 14 } className="animate-spin" />
+                                        <span className="text-xs">Live Generation</span>
+                                    </div>
+                                ) }
                             </h2>
                             <button
                                 onClick={ copyToClipboard }
@@ -442,7 +449,6 @@ const PythonCodeWriter = () => {
                             </button>
                         </div>
                         <div className="flex-1 overflow-hidden">
-                            {/* Monaco Editor */ }
                             <div
                                 ref={ editorRef }
                                 className="w-full h-full"
@@ -457,6 +463,12 @@ const PythonCodeWriter = () => {
                             <h2 className="font-semibold flex items-center space-x-2">
                                 <MessageSquare size={ 18 } />
                                 <span>Code Information</span>
+                                { isStreaming && (
+                                    <div className="flex items-center space-x-1 text-blue-500">
+                                        <RefreshCw size={ 14 } className="animate-spin" />
+                                        <span className="text-xs">Updating...</span>
+                                    </div>
+                                ) }
                             </h2>
                         </div>
                         <div className="flex-1 overflow-auto">
@@ -492,7 +504,7 @@ const PythonCodeWriter = () => {
                             { isLoading ? (
                                 <>
                                     <RefreshCw size={ 18 } className="animate-spin" />
-                                    <span>Generating...</span>
+                                    <span>{ isStreaming ? 'Streaming...' : 'Generating...' }</span>
                                 </>
                             ) : (
                                 <>
@@ -503,7 +515,7 @@ const PythonCodeWriter = () => {
                         </button>
                     </div>
                     <div className="mt-2 text-xs text-gray-600 text-center max-w-7xl mx-auto">
-                        Press Enter to generate code • Support for data analysis, web scraping, APIs & more
+                        Press Enter to generate code • { isStreaming ? 'Real-time streaming enabled' : 'Support for data analysis, web scraping, APIs & more' }
                     </div>
                 </div>
             </div>
