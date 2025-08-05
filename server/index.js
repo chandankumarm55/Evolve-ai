@@ -24,7 +24,7 @@ const corsOptions = {
 
 // Apply CORS with options
 app.use(cors(corsOptions));
-
+console.log(process.env.FRONTEND_URL);
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
