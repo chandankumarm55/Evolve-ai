@@ -11,7 +11,7 @@ const sessions = new Map();
 const generateAiresponseHtmlCss = async(conversation, onChunk = null) => {
     try {
         const API_URL = process.env.AI_API_URL || 'https://api.mistral.ai/v1/chat/completions';
-        const API_KEY = process.env.AI_API_KEY;
+        const API_KEY = process.env.MISTRAL_API_KEY;
 
         if (!API_KEY) {
             throw new Error('AI API key is not configured');
