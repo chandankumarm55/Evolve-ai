@@ -27,13 +27,15 @@ const Conversation = () => {
 
     useEffect(() => {
         if (initialPrompt && !hasSubmittedInitialPrompt.current) {
-            hasSubmittedInitialPrompt.current = true; // prevent future calls
+            hasSubmittedInitialPrompt.current = true;
             handleSubmit({ text: initialPrompt, images: [] });
         }
     }, [initialPrompt]);
 
     const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        if (messagesEndRef.current) {
+            messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
     };
 
     useEffect(() => {
@@ -52,50 +54,82 @@ const Conversation = () => {
             }
             return true;
         } catch (error) {
-            if (error.response?.status === 429) {
+            if (error.response && error.response.status === 429) {
                 throw new Error('You have reached your daily limit. Please upgrade to continue using our services. [USAGE_LIMIT]');
             }
             throw error;
         }
     };
 
-    // Convert images to base64 for API
+    // Enhanced image processing function
     const processImages = async (images) => {
         if (!images || images.length === 0) return [];
 
+        console.log('Processing images:', images.length);
+
         const processedImages = await Promise.all(
             images.map(async (image) => {
-                // If it's already base64, return as is
-                if (typeof image.preview === 'string' && image.preview.startsWith('data:')) {
-                    return {
-                        type: "image_url",
-                        image_url: {
-                            url: image.preview
-                        }
-                    };
-                }
+                try {
+                    // If it's already in the correct format with base64 URL
+                    if (image.type === "image_url" && image.image_url && image.image_url.url) {
+                        return image;
+                    }
 
-                // If it's a file, convert to base64
-                return new Promise((resolve) => {
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        resolve({
+                    // If it's already base64 string
+                    if (typeof image.preview === 'string' && image.preview.startsWith('data:')) {
+                        return {
                             type: "image_url",
                             image_url: {
-                                url: e.target.result
+                                url: image.preview
                             }
+                        };
+                    }
+
+                    // If it's a File object, convert to base64
+                    if (image.file || image instanceof File) {
+                        const fileToProcess = image.file || image;
+                        return new Promise((resolve, reject) => {
+                            const reader = new FileReader();
+                            reader.onload = (e) => {
+                                resolve({
+                                    type: "image_url",
+                                    image_url: {
+                                        url: e.target.result
+                                    }
+                                });
+                            };
+                            reader.onerror = () => reject(new Error('Failed to read image file'));
+                            reader.readAsDataURL(fileToProcess);
                         });
-                    };
-                    reader.readAsDataURL(image.file);
-                });
+                    }
+
+                    // If it's a direct image object with preview
+                    if (image.preview) {
+                        return {
+                            type: "image_url",
+                            image_url: {
+                                url: image.preview
+                            }
+                        };
+                    }
+
+                    console.warn('Unknown image format:', image);
+                    return null;
+                } catch (error) {
+                    console.error('Error processing image:', error);
+                    return null;
+                }
             })
         );
 
-        return processedImages;
+        // Filter out null values and return valid processed images
+        const validImages = processedImages.filter(img => img !== null);
+        console.log('Successfully processed images:', validImages.length);
+
+        return validImages;
     };
 
     const handleSubmit = async (messageData) => {
-        // messageData can be either a string (for backward compatibility) or an object with text and images
         let text, images;
 
         if (typeof messageData === 'string') {
@@ -106,15 +140,20 @@ const Conversation = () => {
             images = messageData.images || [];
         }
 
+        if (!text.trim() && (!images || images.length === 0)) {
+            return; // Don't submit empty messages
+        }
+
         setInput('');
 
-        // Create user message with both text and images for display
+        // Create user message for display
         const userMessage = {
             role: 'user',
             content: text,
-            images: images, // Store images for display in MessageList
+            images: images, // Store original images for display
             timestamp: new Date().toLocaleTimeString(),
         };
+
         setMessages((prev) => [...prev, userMessage]);
         setIsTyping(true);
 
@@ -124,7 +163,14 @@ const Conversation = () => {
             // Process images for API
             const processedImages = await processImages(images);
 
+            console.log('Submitting message:', {
+                text,
+                imagesCount: images.length,
+                processedImagesCount: processedImages.length
+            });
+
             const response = await generateResponse(messages, text, processedImages);
+
             const aiMessage = {
                 role: 'assistant',
                 content: response,
@@ -132,15 +178,28 @@ const Conversation = () => {
                 originalPrompt: text,
                 originalImages: processedImages, // Store for regeneration
             };
+
             setMessages((prev) => [...prev, aiMessage]);
         } catch (error) {
-            const errorMessage = error.message || 'Sorry, I encountered an error. Please try again.';
+            console.error('Error in handleSubmit:', error);
+
+            let errorMessage = 'Sorry, I encountered an error. Please try again.';
+
+            if (error.message.includes('[USAGE_LIMIT]')) {
+                errorMessage = error.message.replace(' [USAGE_LIMIT]', '');
+            } else if (error.message.includes('image')) {
+                errorMessage = 'There was an issue processing your image. Please try with a different image or text only.';
+            } else if (error.message.includes('Network')) {
+                errorMessage = 'Network error. Please check your connection and try again.';
+            }
+
             setMessages((prev) => [
                 ...prev,
                 {
                     role: 'assistant',
                     content: errorMessage,
                     timestamp: new Date().toLocaleTimeString(),
+                    isError: true
                 },
             ]);
         } finally {
@@ -152,7 +211,14 @@ const Conversation = () => {
         setIsTyping(true);
         try {
             await trackUsage();
+
+            console.log('Regenerating response with:', {
+                originalPrompt,
+                originalImagesCount: originalImages.length
+            });
+
             const response = await generateResponse(messages, originalPrompt, originalImages);
+
             const aiMessage = {
                 role: 'assistant',
                 content: response,
@@ -160,15 +226,24 @@ const Conversation = () => {
                 originalPrompt,
                 originalImages,
             };
+
             setMessages((prev) => [...prev, aiMessage]);
         } catch (error) {
-            const errorMessage = error.message || 'Sorry, I encountered an error.';
+            console.error('Error in handleRegenerateResponse:', error);
+
+            let errorMessage = 'Sorry, I encountered an error while regenerating.';
+
+            if (error.message.includes('[USAGE_LIMIT]')) {
+                errorMessage = error.message.replace(' [USAGE_LIMIT]', '');
+            }
+
             setMessages((prev) => [
                 ...prev,
                 {
                     role: 'assistant',
                     content: errorMessage,
                     timestamp: new Date().toLocaleTimeString(),
+                    isError: true
                 },
             ]);
         } finally {
