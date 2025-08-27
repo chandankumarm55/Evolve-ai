@@ -1,4 +1,5 @@
 import axios from 'axios';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 export const generateResponse = async (messages, userInput, images = []) => {
     try {
@@ -57,7 +58,7 @@ export const generateResponse = async (messages, userInput, images = []) => {
             }
         ];
 
-        const response = await axios.post('http://localhost:3000/api/codewriter/conversation', {
+        const response = await axios.post(`${BACKEND_URL}/api/codewriter/conversation`, {
             messages: formattedMessages,
             hasImages: images && images.length > 0
         });
