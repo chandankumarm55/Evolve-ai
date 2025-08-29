@@ -19,11 +19,11 @@ const Message = ({ message, onRepeat }) => {
 
     const handleRepeat = () => {
         if (onRepeat && message.originalPrompt) {
-            onRepeat(message.originalPrompt);
+            onRepeat(message.originalPrompt, message.originalImages);
         }
     };
 
-    const isUsageLimitError = message.content.includes('[USAGE_LIMIT]');
+    const isUsageLimitError = message.content && message.content.includes('[USAGE_LIMIT]');
     const displayContent = isUsageLimitError
         ? message.content.replace('[USAGE_LIMIT]', '')
         : message.content;
@@ -33,6 +33,25 @@ const Message = ({ message, onRepeat }) => {
             <div className="text-xs opacity-70 mb-1">
                 { message.timestamp }
             </div>
+
+            {/* Display images if present (for user messages) */ }
+            { !isAssistant && message.images && message.images.length > 0 && (
+                <div className="mb-2 flex flex-wrap gap-2">
+                    { message.images.map((image, index) => (
+                        <div key={ index } className="relative">
+                            <img
+                                src={ image.preview || image.image_url?.url || (typeof image === 'string' ? image : '') }
+                                alt={ image.name || `Image ${index + 1}` }
+                                className="h-32 w-32 object-cover rounded-lg border shadow-sm"
+                                onError={ (e) => {
+                                    console.error('Failed to load image:', image);
+                                    e.target.style.display = 'none';
+                                } }
+                            />
+                        </div>
+                    )) }
+                </div>
+            ) }
 
             { isUsageLimitError ? (
                 <Alert variant="destructive" className="mb-4">

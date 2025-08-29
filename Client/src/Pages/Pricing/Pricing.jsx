@@ -134,7 +134,7 @@ const Pricing = () => {
         },
         {
             name: 'Starter',
-            price: 5,
+            price: 1,
             description: 'Perfect for individual creators',
             features: {
                 'Conversations (50/day)': true,
