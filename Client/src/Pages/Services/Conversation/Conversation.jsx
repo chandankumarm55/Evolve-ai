@@ -18,12 +18,15 @@ const Conversation = () => {
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
     const [isTyping, setIsTyping] = useState(false);
+    const [streamingContent, setStreamingContent] = useState('');
+    const [isStreaming, setIsStreaming] = useState(false);
     const messagesEndRef = useRef(null);
     const { theme } = useTheme();
     const isDark = theme === 'dark';
     const dispatch = useDispatch();
     const clerkId = localStorage.getItem('clerkId');
     const [hasPromptBeenHandled, setHasPromptBeenHandled] = useState(false);
+    const streamingMessageRef = useRef(null);
 
     useEffect(() => {
         if (initialPrompt && !hasSubmittedInitialPrompt.current) {
@@ -40,7 +43,7 @@ const Conversation = () => {
 
     useEffect(() => {
         scrollToBottom();
-    }, [messages]);
+    }, [messages, streamingContent]);
 
     const trackUsage = async () => {
         if (!clerkId) {
@@ -156,6 +159,21 @@ const Conversation = () => {
 
         setMessages((prev) => [...prev, userMessage]);
         setIsTyping(true);
+        setIsStreaming(true);
+        setStreamingContent('');
+
+        // Create a temporary streaming message
+        const streamingMessage = {
+            role: 'assistant',
+            content: '',
+            timestamp: new Date().toLocaleTimeString(),
+            originalPrompt: text,
+            originalImages: await processImages(images),
+            isStreaming: true
+        };
+
+        streamingMessageRef.current = streamingMessage;
+        setMessages((prev) => [...prev, streamingMessage]);
 
         try {
             await trackUsage();
@@ -169,17 +187,40 @@ const Conversation = () => {
                 processedImagesCount: processedImages.length
             });
 
-            const response = await generateResponse(messages, text, processedImages);
+            // Handle streaming chunks
+            const handleChunk = (chunk, fullContent) => {
+                setStreamingContent(fullContent);
 
-            const aiMessage = {
-                role: 'assistant',
-                content: response,
-                timestamp: new Date().toLocaleTimeString(),
-                originalPrompt: text,
-                originalImages: processedImages, // Store for regeneration
+                // Update the streaming message in the messages array
+                setMessages((prev) => {
+                    const newMessages = [...prev];
+                    const lastMessageIndex = newMessages.length - 1;
+                    if (newMessages[lastMessageIndex] && newMessages[lastMessageIndex].isStreaming) {
+                        newMessages[lastMessageIndex] = {
+                            ...newMessages[lastMessageIndex],
+                            content: fullContent
+                        };
+                    }
+                    return newMessages;
+                });
             };
 
-            setMessages((prev) => [...prev, aiMessage]);
+            const response = await generateResponse(messages, text, processedImages, handleChunk);
+
+            // Finalize the message
+            setMessages((prev) => {
+                const newMessages = [...prev];
+                const lastMessageIndex = newMessages.length - 1;
+                if (newMessages[lastMessageIndex] && newMessages[lastMessageIndex].isStreaming) {
+                    newMessages[lastMessageIndex] = {
+                        ...newMessages[lastMessageIndex],
+                        content: response,
+                        isStreaming: false
+                    };
+                }
+                return newMessages;
+            });
+
         } catch (error) {
             console.error('Error in handleSubmit:', error);
 
@@ -193,22 +234,52 @@ const Conversation = () => {
                 errorMessage = 'Network error. Please check your connection and try again.';
             }
 
-            setMessages((prev) => [
-                ...prev,
-                {
-                    role: 'assistant',
-                    content: errorMessage,
-                    timestamp: new Date().toLocaleTimeString(),
-                    isError: true
-                },
-            ]);
+            // Remove the streaming message and add error message
+            setMessages((prev) => {
+                const newMessages = [...prev];
+                if (newMessages[newMessages.length - 1]?.isStreaming) {
+                    newMessages[newMessages.length - 1] = {
+                        role: 'assistant',
+                        content: errorMessage,
+                        timestamp: new Date().toLocaleTimeString(),
+                        isError: true
+                    };
+                } else {
+                    newMessages.push({
+                        role: 'assistant',
+                        content: errorMessage,
+                        timestamp: new Date().toLocaleTimeString(),
+                        isError: true
+                    });
+                }
+                return newMessages;
+            });
         } finally {
             setIsTyping(false);
+            setIsStreaming(false);
+            setStreamingContent('');
+            streamingMessageRef.current = null;
         }
     };
 
     const handleRegenerateResponse = async (originalPrompt, originalImages = []) => {
         setIsTyping(true);
+        setIsStreaming(true);
+        setStreamingContent('');
+
+        // Create a new streaming message
+        const streamingMessage = {
+            role: 'assistant',
+            content: '',
+            timestamp: new Date().toLocaleTimeString(),
+            originalPrompt,
+            originalImages,
+            isStreaming: true
+        };
+
+        streamingMessageRef.current = streamingMessage;
+        setMessages((prev) => [...prev, streamingMessage]);
+
         try {
             await trackUsage();
 
@@ -217,17 +288,39 @@ const Conversation = () => {
                 originalImagesCount: originalImages.length
             });
 
-            const response = await generateResponse(messages, originalPrompt, originalImages);
+            // Handle streaming chunks for regeneration
+            const handleChunk = (chunk, fullContent) => {
+                setStreamingContent(fullContent);
 
-            const aiMessage = {
-                role: 'assistant',
-                content: response,
-                timestamp: new Date().toLocaleTimeString(),
-                originalPrompt,
-                originalImages,
+                setMessages((prev) => {
+                    const newMessages = [...prev];
+                    const lastMessageIndex = newMessages.length - 1;
+                    if (newMessages[lastMessageIndex] && newMessages[lastMessageIndex].isStreaming) {
+                        newMessages[lastMessageIndex] = {
+                            ...newMessages[lastMessageIndex],
+                            content: fullContent
+                        };
+                    }
+                    return newMessages;
+                });
             };
 
-            setMessages((prev) => [...prev, aiMessage]);
+            const response = await generateResponse(messages, originalPrompt, originalImages, handleChunk);
+
+            // Finalize the regenerated message
+            setMessages((prev) => {
+                const newMessages = [...prev];
+                const lastMessageIndex = newMessages.length - 1;
+                if (newMessages[lastMessageIndex] && newMessages[lastMessageIndex].isStreaming) {
+                    newMessages[lastMessageIndex] = {
+                        ...newMessages[lastMessageIndex],
+                        content: response,
+                        isStreaming: false
+                    };
+                }
+                return newMessages;
+            });
+
         } catch (error) {
             console.error('Error in handleRegenerateResponse:', error);
 
@@ -237,17 +330,31 @@ const Conversation = () => {
                 errorMessage = error.message.replace(' [USAGE_LIMIT]', '');
             }
 
-            setMessages((prev) => [
-                ...prev,
-                {
-                    role: 'assistant',
-                    content: errorMessage,
-                    timestamp: new Date().toLocaleTimeString(),
-                    isError: true
-                },
-            ]);
+            // Remove the streaming message and add error message
+            setMessages((prev) => {
+                const newMessages = [...prev];
+                if (newMessages[newMessages.length - 1]?.isStreaming) {
+                    newMessages[newMessages.length - 1] = {
+                        role: 'assistant',
+                        content: errorMessage,
+                        timestamp: new Date().toLocaleTimeString(),
+                        isError: true
+                    };
+                } else {
+                    newMessages.push({
+                        role: 'assistant',
+                        content: errorMessage,
+                        timestamp: new Date().toLocaleTimeString(),
+                        isError: true
+                    });
+                }
+                return newMessages;
+            });
         } finally {
             setIsTyping(false);
+            setIsStreaming(false);
+            setStreamingContent('');
+            streamingMessageRef.current = null;
         }
     };
 
@@ -265,6 +372,8 @@ const Conversation = () => {
                     <MessageList
                         messages={ messages }
                         isTyping={ isTyping }
+                        isStreaming={ isStreaming }
+                        streamingContent={ streamingContent }
                         messagesEndRef={ messagesEndRef }
                         onRepeat={ handleRegenerateResponse }
                     />
@@ -274,7 +383,7 @@ const Conversation = () => {
                 input={ input }
                 setInput={ setInput }
                 onSubmit={ handleSubmit }
-                isTyping={ isTyping }
+                isTyping={ isTyping || isStreaming }
                 className="sticky bottom-0"
             />
         </ServiceContainer>

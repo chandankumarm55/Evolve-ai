@@ -25,6 +25,7 @@ router.post("/htmlcssjscodegenerate", generateCode);
 router.post('/continue', continueConversation);
 router.post('/download', downloadFiles);
 router.post("/conversation", ConversationAIResponse);
+router.post("/conversation-stream", ConversationAIResponse); // Streaming endpoint
 router.post("/pythoncodegenerate", pythonCodeGenerator);
 
 // SQL Code Writer routes
