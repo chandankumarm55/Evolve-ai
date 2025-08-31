@@ -35,6 +35,90 @@ const compressBase64Image = (base64String, maxSizeKB = 800) => {
     return base64String;
 };
 
+// Format messages helper function
+const formatMessages = (messages) => {
+    const formattedMessages = [];
+
+    // Add system message only once
+    formattedMessages.push({
+        role: 'system',
+        content: EVOLVE_AI_SYSTEM_PROMPT
+    });
+
+    // Process conversation messages - limit to last 10 messages to prevent payload issues
+    const conversationMessages = messages
+        .filter(msg => msg.role !== 'system')
+        .slice(-10); // Keep only last 10 messages
+
+    // Ensure proper alternating pattern and handle image content
+    let lastRole = 'system';
+    for (const msg of conversationMessages) {
+        if (msg.role !== lastRole || msg.role === 'user') {
+            let messageContent;
+
+            if (msg.role === 'user' && msg.images && msg.images.length > 0) {
+                // For user messages with images, create multimodal content
+                messageContent = [];
+
+                // Add text content if present
+                if (msg.content && msg.content.trim()) {
+                    messageContent.push({
+                        type: "text",
+                        text: msg.content
+                    });
+                }
+
+                // Add image content (limit to 3 images max to prevent payload issues)
+                const imagesToProcess = msg.images.slice(0, 3);
+
+                for (const image of imagesToProcess) {
+                    try {
+                        let imageUrl;
+
+                        if (image.type === "image_url" && image.image_url && image.image_url.url) {
+                            imageUrl = image.image_url.url;
+                        } else if (typeof image === 'string') {
+                            imageUrl = image;
+                        } else if (image.url) {
+                            imageUrl = image.url;
+                        }
+
+                        if (imageUrl && validateImageData(imageUrl)) {
+                            const compressedImage = compressBase64Image(imageUrl);
+                            messageContent.push({
+                                type: "image_url",
+                                image_url: {
+                                    url: compressedImage
+                                }
+                            });
+                        } else {
+                            console.warn('Invalid image data skipped');
+                        }
+                    } catch (imageError) {
+                        console.error('Error processing individual image:', imageError);
+                    }
+                }
+
+                if (imagesToProcess.length > 3) {
+                    console.warn(`Only processing first 3 images out of ${msg.images.length}`);
+                }
+            } else {
+                // For regular text messages
+                messageContent = typeof msg.content === 'string' ? msg.content :
+                    (msg.content && msg.content.text ? msg.content.text : String(msg.content));
+            }
+
+            formattedMessages.push({
+                role: msg.role,
+                content: messageContent
+            });
+            lastRole = msg.role;
+        }
+    }
+
+    return formattedMessages;
+};
+
 export const generateResponse = async(messages, userInput, hasImages = false) => {
     try {
         // Choose the appropriate model based on whether images are present
@@ -44,85 +128,7 @@ export const generateResponse = async(messages, userInput, hasImages = false) =>
         console.log('Has images:', hasImages);
         console.log('Total messages:', messages.length);
 
-        // Filter and format messages properly
-        const formattedMessages = [];
-
-        // Add system message only once
-        formattedMessages.push({
-            role: 'system',
-            content: EVOLVE_AI_SYSTEM_PROMPT
-        });
-
-        // Process conversation messages - limit to last 10 messages to prevent payload issues
-        const conversationMessages = messages
-            .filter(msg => msg.role !== 'system')
-            .slice(-10); // Keep only last 10 messages
-
-        // Ensure proper alternating pattern and handle image content
-        let lastRole = 'system';
-        for (const msg of conversationMessages) {
-            if (msg.role !== lastRole || msg.role === 'user') {
-                let messageContent;
-
-                if (msg.role === 'user' && msg.images && msg.images.length > 0) {
-                    // For user messages with images, create multimodal content
-                    messageContent = [];
-
-                    // Add text content if present
-                    if (msg.content && msg.content.trim()) {
-                        messageContent.push({
-                            type: "text",
-                            text: msg.content
-                        });
-                    }
-
-                    // Add image content (limit to 3 images max to prevent payload issues)
-                    const imagesToProcess = msg.images.slice(0, 3);
-
-                    for (const image of imagesToProcess) {
-                        try {
-                            let imageUrl;
-
-                            if (image.type === "image_url" && image.image_url && image.image_url.url) {
-                                imageUrl = image.image_url.url;
-                            } else if (typeof image === 'string') {
-                                imageUrl = image;
-                            } else if (image.url) {
-                                imageUrl = image.url;
-                            }
-
-                            if (imageUrl && validateImageData(imageUrl)) {
-                                const compressedImage = compressBase64Image(imageUrl);
-                                messageContent.push({
-                                    type: "image_url",
-                                    image_url: {
-                                        url: compressedImage
-                                    }
-                                });
-                            } else {
-                                console.warn('Invalid image data skipped');
-                            }
-                        } catch (imageError) {
-                            console.error('Error processing individual image:', imageError);
-                        }
-                    }
-
-                    if (imagesToProcess.length > 3) {
-                        console.warn(`Only processing first 3 images out of ${msg.images.length}`);
-                    }
-                } else {
-                    // For regular text messages
-                    messageContent = typeof msg.content === 'string' ? msg.content :
-                        (msg.content && msg.content.text ? msg.content.text : String(msg.content));
-                }
-
-                formattedMessages.push({
-                    role: msg.role,
-                    content: messageContent
-                });
-                lastRole = msg.role;
-            }
-        }
+        const formattedMessages = formatMessages(messages);
 
         // Ensure the conversation ends with a user message
         const lastMessage = formattedMessages[formattedMessages.length - 1];
@@ -222,7 +228,7 @@ export const generateResponse = async(messages, userInput, hasImages = false) =>
     }
 };
 
-// New streaming function
+// FIXED streaming function
 export const generateStreamingResponse = async(messages, userInput, hasImages = false, res) => {
     try {
         const model = hasImages ? 'pixtral-12b-2409' : 'mistral-small-latest';
@@ -231,71 +237,7 @@ export const generateStreamingResponse = async(messages, userInput, hasImages = 
         console.log('Has images:', hasImages);
         console.log('Total messages:', messages.length);
 
-        // Format messages (same logic as non-streaming)
-        const formattedMessages = [];
-        formattedMessages.push({
-            role: 'system',
-            content: EVOLVE_AI_SYSTEM_PROMPT
-        });
-
-        const conversationMessages = messages
-            .filter(msg => msg.role !== 'system')
-            .slice(-10);
-
-        let lastRole = 'system';
-        for (const msg of conversationMessages) {
-            if (msg.role !== lastRole || msg.role === 'user') {
-                let messageContent;
-
-                if (msg.role === 'user' && msg.images && msg.images.length > 0) {
-                    messageContent = [];
-
-                    if (msg.content && msg.content.trim()) {
-                        messageContent.push({
-                            type: "text",
-                            text: msg.content
-                        });
-                    }
-
-                    const imagesToProcess = msg.images.slice(0, 3);
-
-                    for (const image of imagesToProcess) {
-                        try {
-                            let imageUrl;
-
-                            if (image.type === "image_url" && image.image_url && image.image_url.url) {
-                                imageUrl = image.image_url.url;
-                            } else if (typeof image === 'string') {
-                                imageUrl = image;
-                            } else if (image.url) {
-                                imageUrl = image.url;
-                            }
-
-                            if (imageUrl && validateImageData(imageUrl)) {
-                                const compressedImage = compressBase64Image(imageUrl);
-                                messageContent.push({
-                                    type: "image_url",
-                                    image_url: {
-                                        url: compressedImage
-                                    }
-                                });
-                            }
-                        } catch (imageError) {
-                            console.error('Error processing individual image:', imageError);
-                        }
-                    }
-                } else {
-                    messageContent = typeof msg.content === 'string' ? msg.content :
-                        (msg.content && msg.content.text ? msg.content.text : String(msg.content));
-                }
-
-                formattedMessages.push({
-                    role: msg.role,
-                    content: messageContent
-                });
-                lastRole = msg.role;
-            }
-        }
+        const formattedMessages = formatMessages(messages);
 
         const requestBody = {
             model: model,
@@ -305,7 +247,7 @@ export const generateStreamingResponse = async(messages, userInput, hasImages = 
             stream: true // Enable streaming
         };
 
-        // Set up SSE headers
+        // Set up SSE headers - IMPORTANT: Do this FIRST
         res.writeHead(200, {
             'Content-Type': 'text/event-stream',
             'Cache-Control': 'no-cache',
@@ -335,7 +277,7 @@ export const generateStreamingResponse = async(messages, userInput, hasImages = 
 
             for (const line of lines) {
                 if (line.startsWith('data: ')) {
-                    const data = line.slice(6);
+                    const data = line.slice(6).trim();
 
                     if (data === '[DONE]') {
                         res.write('data: [DONE]\n\n');
@@ -343,28 +285,41 @@ export const generateStreamingResponse = async(messages, userInput, hasImages = 
                         return;
                     }
 
-                    try {
-                        const parsed = JSON.parse(data);
-                        if (parsed.choices && parsed.choices[0] && parsed.choices[0].delta) {
-                            // Forward the chunk to the client
-                            res.write(`data: ${JSON.stringify(parsed)}\n\n`);
+                    if (data) {
+                        try {
+                            const parsed = JSON.parse(data);
+                            if (parsed.choices && parsed.choices[0] && parsed.choices[0].delta) {
+                                // Forward the chunk to the client in proper SSE format
+                                res.write(`data: ${JSON.stringify(parsed)}\n\n`);
+                            }
+                        } catch (parseError) {
+                            console.warn('Failed to parse streaming data:', data);
                         }
-                    } catch (parseError) {
-                        console.warn('Failed to parse streaming data:', data);
                     }
                 }
             }
         });
 
         response.data.on('end', () => {
-            res.write('data: [DONE]\n\n');
+            if (!res.headersSent) {
+                res.write('data: [DONE]\n\n');
+            }
             res.end();
         });
 
         response.data.on('error', (error) => {
             console.error('Streaming error:', error);
-            res.write(`data: ${JSON.stringify({ error: 'Streaming error occurred' })}\n\n`);
+            if (!res.headersSent) {
+                res.write(`data: ${JSON.stringify({ error: 'Streaming error occurred' })}\n\n`);
+                res.write('data: [DONE]\n\n');
+            }
             res.end();
+        });
+
+        // Handle client disconnect
+        req.on('close', () => {
+            console.log('Client disconnected, ending stream');
+            response.data.destroy();
         });
 
     } catch (error) {
@@ -375,7 +330,15 @@ export const generateStreamingResponse = async(messages, userInput, hasImages = 
             message: error.message
         });
 
-        // Send error as SSE
+        // Send error as SSE if headers not sent yet
+        if (!res.headersSent) {
+            res.writeHead(200, {
+                'Content-Type': 'text/event-stream',
+                'Cache-Control': 'no-cache',
+                'Connection': 'keep-alive',
+            });
+        }
+
         const errorMessage = {
             choices: [{
                 delta: {
@@ -471,7 +434,7 @@ export const ConversationAIResponse = async(req, res) => {
     }
 };
 
-// New streaming endpoint
+// FIXED streaming endpoint
 export const ConversationAIStreamingResponse = async(req, res) => {
     try {
         const { messages, hasImages = false, processedImages = [] } = req.body;
@@ -530,16 +493,24 @@ export const ConversationAIStreamingResponse = async(req, res) => {
     } catch (err) {
         console.error("Streaming conversation route error:", err);
 
-        // Send error as SSE
-        const errorMessage = {
-            choices: [{
-                delta: {
-                    content: "I apologize, but I'm having trouble processing your request. Please try again."
-                }
-            }]
-        };
-
+        // Send error as SSE if possible
         try {
+            if (!res.headersSent) {
+                res.writeHead(200, {
+                    'Content-Type': 'text/event-stream',
+                    'Cache-Control': 'no-cache',
+                    'Connection': 'keep-alive',
+                });
+            }
+
+            const errorMessage = {
+                choices: [{
+                    delta: {
+                        content: "I apologize, but I'm having trouble processing your request. Please try again."
+                    }
+                }]
+            };
+
             res.write(`data: ${JSON.stringify(errorMessage)}\n\n`);
             res.write('data: [DONE]\n\n');
             res.end();

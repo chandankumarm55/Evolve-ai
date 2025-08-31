@@ -200,7 +200,7 @@ const Message = ({ message, onRepeat, isStreaming = false }) => {
             ) : (
                 <div
                     className={ `rounded-lg p-2 shadow max-w-max ${isAssistant
-                        ? 'bg-white dark:bg-gray-800'
+                        ? 'bg-transparent'
                         : 'bg-blue-500 text-white'
                         }` }
                     style={ { textAlign: 'justify' } }

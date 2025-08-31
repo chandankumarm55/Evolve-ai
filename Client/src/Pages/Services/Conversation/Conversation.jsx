@@ -35,15 +35,8 @@ const Conversation = () => {
         }
     }, [initialPrompt]);
 
-    const scrollToBottom = () => {
-        if (messagesEndRef.current) {
-            messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-        }
-    };
-
-    useEffect(() => {
-        scrollToBottom();
-    }, [messages, streamingContent]);
+    // REMOVED the automatic scroll effect that was causing the issue
+    // The MessageList component now handles scrolling intelligently
 
     const trackUsage = async () => {
         if (!clerkId) {
@@ -365,7 +358,7 @@ const Conversation = () => {
 
     return (
         <ServiceContainer className={ `${isDark ? 'bg-gray-900 text-gray-100' : 'bg-gray-100 text-gray-900'} flex flex-col h-screen` }>
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-hidden"> {/* CHANGED: removed overflow-y-auto, MessageList handles this now */ }
                 { messages.length === 0 ? (
                     <RandomQuestions onQuestionSelect={ handleQuestionSelect } />
                 ) : (
