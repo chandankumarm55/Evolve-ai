@@ -35,9 +35,6 @@ const Conversation = () => {
         }
     }, [initialPrompt]);
 
-    // REMOVED the automatic scroll effect that was causing the issue
-    // The MessageList component now handles scrolling intelligently
-
     const trackUsage = async () => {
         if (!clerkId) {
             throw new Error('No user ID found. Please log in again.');
@@ -358,9 +355,12 @@ const Conversation = () => {
 
     return (
         <ServiceContainer className={ `${isDark ? 'bg-gray-900 text-gray-100' : 'bg-gray-100 text-gray-900'} flex flex-col h-screen` }>
-            <div className="flex-1 overflow-hidden"> {/* CHANGED: removed overflow-y-auto, MessageList handles this now */ }
+            {/* Main content area - no overflow classes here */ }
+            <div className="flex-1 flex flex-col min-h-0">
                 { messages.length === 0 ? (
-                    <RandomQuestions onQuestionSelect={ handleQuestionSelect } />
+                    <div className="flex-1 overflow-y-auto">
+                        <RandomQuestions onQuestionSelect={ handleQuestionSelect } />
+                    </div>
                 ) : (
                     <MessageList
                         messages={ messages }
@@ -372,13 +372,17 @@ const Conversation = () => {
                     />
                 ) }
             </div>
-            <MessageInput
-                input={ input }
-                setInput={ setInput }
-                onSubmit={ handleSubmit }
-                isTyping={ isTyping || isStreaming }
-                className="sticky bottom-0"
-            />
+
+            {/* Fixed input at bottom */ }
+            <div className="flex-shrink-0 sticky bottom-0 z-10">
+                <MessageInput
+                    input={ input }
+                    setInput={ setInput }
+                    onSubmit={ handleSubmit }
+                    isTyping={ isTyping || isStreaming }
+                    className="border-t"
+                />
+            </div>
         </ServiceContainer>
     );
 };
